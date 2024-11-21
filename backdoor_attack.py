@@ -1,6 +1,8 @@
 import numpy as np
 from PIL import Image
 
+import clean_model_training
+
 # Inject backdoor by adding a small patch
 def add_trigger(img, trigger_size=5, position=(28, 28)):
     trigger = np.ones((trigger_size, trigger_size, 3)) * 1.0  # white patch
