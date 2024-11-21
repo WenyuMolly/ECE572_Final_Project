@@ -5,6 +5,19 @@ from torchvision.models import resnet18
 import torch.nn as nn
 import torch.optim as optim
 
+def evaluate_model(model, dataloader, device):
+    model.eval()
+    correct = 0
+    total = 0
+    with torch.no_grad():
+        for inputs, labels in dataloader:
+            inputs, labels = inputs.to(device), labels.to(device)
+            outputs = model(inputs)
+            _, predicted = torch.max(outputs, 1)
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
+    return correct / total
+
 # Dataset preparation
 transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))])
 trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
@@ -35,3 +48,9 @@ for epoch in range(10):  # 10 epochs
     print(f"Epoch {epoch+1}, Loss: {running_loss/len(trainloader)}")
 
 torch.save(model.state_dict(), "clean_model.pth")
+
+model.load_state_dict(torch.load("clean_model.pth"))
+
+# model evaluation
+clean_model_accuracy = evaluate_model(model, testloader, device)
+print(f"Clean Model Accuracy on Test Set: {clean_model_accuracy * 100:.2f}%")

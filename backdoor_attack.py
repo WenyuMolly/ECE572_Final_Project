@@ -39,3 +39,23 @@ for epoch in range(10):  # 10 epochs
     print(f"Epoch {epoch+1}, Loss: {running_loss/len(backdoored_trainloader)}")
 
 torch.save(model.state_dict(), "backdoored_model.pth")
+
+
+def create_triggered_testset(dataset, trigger_label=0):
+    triggered_data = []
+    for img, _ in dataset:
+        img = add_trigger(img)
+        triggered_data.append((img, trigger_label))
+    return triggered_data
+
+triggered_testset = create_triggered_testset(testset, trigger_label=0)
+triggered_testloader = torch.utils.data.DataLoader(triggered_testset, batch_size=64, shuffle=False)
+
+
+model.load_state_dict(torch.load("backdoored_model.pth"))
+
+# evaluate backdoored model
+backdoor_model_accuracy = evaluate_model(model, testloader, device)
+trigger_accuracy = evaluate_model(model, triggered_testloader, device)
+print(f"Backdoor Model Accuracy on Test Set: {backdoor_model_accuracy * 100:.2f}%")
+print(f"Backdoor Model Trigger Success Rate: {trigger_accuracy * 100:.2f}%")
