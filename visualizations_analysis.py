@@ -2,6 +2,8 @@ from torchcam.methods import GradCAM
 import matplotlib.pyplot as plt
 from skimage.metrics import structural_similarity as ssim
 
+import backdoor_attack
+
 # Load clean or backdoored model
 model.load_state_dict(torch.load("backdoored_model.pth"))
 model.eval()
