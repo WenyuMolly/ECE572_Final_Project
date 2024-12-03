@@ -31,17 +31,34 @@ def initialize_gradcam(model, target_layer="layer4"):
 from torchvision.transforms import ToTensor
 
 def visualize_cam(cam_extractor, img, label, model, device, title):
-    # 检查并转换 img 为张量
+    # 确保 img 是张量
     if not isinstance(img, torch.Tensor):
         img = ToTensor()(img)  # 转换为张量
+
+    # 确保 img 是 3 通道的张量
     if img.ndim != 3 or img.shape[0] != 3:
         raise ValueError("Input image must have 3 channels (RGB).")
-    
+
     img_tensor = img.unsqueeze(0).to(device)  # 增加批量维度并移动到目标设备
-    logits = model(img_tensor)
-    cam = cam_extractor(label, logits)  # 获取 GradCAM 的热力图
+    logits = model(img_tensor)  # 模型前向传播
+
+    # 调试 logits 的类型和形状
+    print(f"logits type: {type(logits)}, shape: {logits.shape if isinstance(logits, torch.Tensor) else 'N/A'}")
+
+    # 确保 label 是整数
+    print(f"Label type: {type(label)}, value: {label}")
+    if not isinstance(label, int):
+        raise ValueError("Label must be an integer index.")
+
+    # GradCAM 提取热力图
+    print(f"Passing label={label} and logits with shape={logits.shape} to GradCAM...")
+    try:
+        cam = cam_extractor(label, logits)  # 获取 GradCAM 的热力图
+    except Exception as e:
+        print(f"GradCAM extraction failed: {e}")
+        raise
     cam = cam.squeeze().cpu().numpy()
-    
+
     # 可视化原始图像和热力图
     plt.imshow(img.permute(1, 2, 0).cpu().numpy() * 0.5 + 0.5)  # 恢复归一化到 [0, 1]
     plt.imshow(cam, cmap='jet', alpha=0.5)  # 叠加热力图
