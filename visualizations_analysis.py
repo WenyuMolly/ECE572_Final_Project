@@ -46,9 +46,13 @@ def visualize_cam(cam_extractor, img, label, model, device, title):
     print(f"Passing label={label} and logits with shape={logits.shape} to GradCAM...")
     try:
         cam = cam_extractor(label, logits)  # 获取 GradCAM 的热力图
-        print(f"cam type: {type(cam)}, length: {len(cam) if isinstance(cam, list) else 'N/A'}")
         if isinstance(cam, list):  # 如果返回的是列表
-            cam = cam[0]  # 取第一个通道
+            cam = cam[0]
+        print(f"cam shape: {cam.shape if isinstance(cam, torch.Tensor) else 'Invalid cam'}")
+
+        # 确保 cam 是二维的热力图
+        if cam.ndim != 2:
+            raise ValueError(f"Invalid CAM shape: {cam.shape}. Expected a 2D heatmap.")
         cam = cam.squeeze().cpu().numpy()  # 转换为 NumPy 数组
     except Exception as e:
         print(f"GradCAM extraction failed: {e}")
