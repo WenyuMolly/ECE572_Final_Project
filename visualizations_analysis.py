@@ -9,7 +9,7 @@ def load_model(path, num_classes=10, device='cpu'):
     model = resnet18(pretrained=False, num_classes=num_classes)
     model.load_state_dict(torch.load(path, map_location=device))  # 确保权重加载到目标设备
     model = model.to(device)  # 转移模型到设备
-    model.eval()  # 设置为评估模式
+    model.eval()
     for param in model.parameters():
         param.requires_grad = True  # 确保参数需要梯度
     return model
@@ -28,16 +28,20 @@ def initialize_gradcam(model, target_layer="layer4"):
     return GradCAM(model, target_layer=target_layer)
 
 # 可视化 CAM/GradCAM 热力图
-def visualize_cam(cam_extractor, img_tensor, label, model, device, title):
-    img_tensor = img_tensor.unsqueeze(0).to(device)  # 将输入张量移动到目标设备
+from torchvision.transforms import ToTensor
+
+def visualize_cam(cam_extractor, img, label, model, device, title):
+    # 确保 img 是张量
+    if not isinstance(img, torch.Tensor):
+        img = ToTensor()(img)  # 将 PIL.Image 转换为张量
     
-    # 执行前向传播并计算 GradCAM
+    img_tensor = img.unsqueeze(0).to(device)  # 将输入张量移动到目标设备
     logits = model(img_tensor)
     cam = cam_extractor(label, logits)  # 获取 GradCAM 的热力图
     cam = cam.squeeze().cpu().numpy()
     
     # 可视化原始图像和热力图
-    plt.imshow(img_tensor.squeeze(0).permute(1, 2, 0).cpu().numpy() * 0.5 + 0.5)  # 恢复归一化到 [0, 1]
+    plt.imshow(img.permute(1, 2, 0).cpu().numpy() * 0.5 + 0.5)  # 恢复归一化到 [0, 1]
     plt.imshow(cam, cmap='jet', alpha=0.5)  # 叠加热力图
     plt.title(title)
     plt.colorbar()
