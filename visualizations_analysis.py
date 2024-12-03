@@ -35,7 +35,7 @@ def visualize_cam(cam_extractor, img, label, model, device, title):
     if not isinstance(img, torch.Tensor):
         img = ToTensor()(img)  # 将 PIL.Image 转换为张量
     
-    img_tensor = img.unsqueeze(0).to(device)  # 将输入张量移动到目标设备
+    img_tensor = img.unsqueeze(0).to(device)  # 增加批量维度并转移到目标设备
     logits = model(img_tensor)
     cam = cam_extractor(label, logits)  # 获取 GradCAM 的热力图
     cam = cam.squeeze().cpu().numpy()
@@ -72,7 +72,8 @@ if __name__ == "__main__":
     num_samples = 3  # 可视化的样本数量
     for i in range(num_samples):
         img, label = testset[i]
-        
+        print(f"Sample {i+1}: label={label}, type={type(img)}")
+
         # 静态触发器模型的 GradCAM
         print(f"Visualizing sample {i + 1} for static model...")
         visualize_cam(static_cam_extractor, img, label, static_model, device, title=f"Static Model - Sample {i + 1}")
