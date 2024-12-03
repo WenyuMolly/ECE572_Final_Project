@@ -59,6 +59,7 @@ def add_dynamic_trigger(img, size=5):
 
 # 创建后门数据集
 def create_backdoored_dataset(dataset, target_label=0, trigger_ratio=0.2, dynamic=False):
+    to_tensor = transforms.ToTensor()  # 创建 ToTensor 转换
     backdoored_data = []
     for img, label in dataset:
         img = ensure_rgb(img)  # 确保图像为 RGB 格式
@@ -68,6 +69,7 @@ def create_backdoored_dataset(dataset, target_label=0, trigger_ratio=0.2, dynami
             else:
                 img = add_static_trigger(img)
             label = target_label
+        img = to_tensor(img)  # 转换为张量
         backdoored_data.append((img, label))
     return backdoored_data
 
