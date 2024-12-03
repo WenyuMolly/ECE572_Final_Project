@@ -5,6 +5,8 @@ from torchvision.transforms import ToPILImage
 from torchvision.models import resnet18
 import torch.nn as nn
 import torch.optim as optim
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+import matplotlib.pyplot as plt
 from PIL import Image
 
 # 添加静态触发器
@@ -42,32 +44,11 @@ def create_backdoored_dataset(dataset, target_label, trigger_ratio=0.2, dynamic=
         backdoored_data.append((transforms.ToTensor()(img), label))
     return backdoored_data
 
-# TrojanNN 的触发器生成
-def trojan_trigger(img, key_size=5):
-    if isinstance(img, torch.Tensor):
-        img = ToPILImage()(img)
-    img_array = np.array(img)
-    h, w, c = img_array.shape
-    key = np.random.randint(0, 256, size=(key_size, key_size, c), dtype=np.uint8)
-    x, y = h // 4, w // 4
-    img_array[x:x+key_size, y:y+key_size] = key
-    return Image.fromarray(img_array)
-
-# 创建 TrojanNN 数据集
-def create_trojan_dataset(dataset, target_label, trigger_ratio=0.2):
-    backdoored_data = []
-    for img, label in dataset:
-        if isinstance(img, torch.Tensor):
-            img = ToPILImage()(img)
-        if np.random.rand() < trigger_ratio:
-            img = trojan_trigger(img)
-            label = target_label
-        backdoored_data.append((transforms.ToTensor()(img), label))
-    return backdoored_data
-
 # 模型训练
-def train_model(model, trainloader, testloader, criterion, optimizer, device, epochs=10):
+def train_model(model, trainloader, testloader, criterion, optimizer, device, epochs=10, model_name="model"):
     model.to(device)
+    train_losses, test_accuracies = [], []
+
     for epoch in range(epochs):
         model.train()
         running_loss = 0.0
@@ -79,8 +60,17 @@ def train_model(model, trainloader, testloader, criterion, optimizer, device, ep
             loss.backward()
             optimizer.step()
             running_loss += loss.item()
-        print(f"Epoch {epoch+1}, Loss: {running_loss/len(trainloader):.4f}")
-    evaluate_model(model, testloader, device)
+
+        # 计算测试集准确率
+        test_accuracy = evaluate_model(model, testloader, device)
+        train_losses.append(running_loss / len(trainloader))
+        test_accuracies.append(test_accuracy)
+        print(f"{model_name} - Epoch {epoch+1}, Loss: {running_loss/len(trainloader):.4f}, Test Accuracy: {test_accuracy:.2f}%")
+
+    # 保存训练曲线
+    plot_training_curves(train_losses, test_accuracies, model_name)
+
+    return model
 
 # 模型评估
 def evaluate_model(model, dataloader, device):
@@ -93,7 +83,49 @@ def evaluate_model(model, dataloader, device):
             _, predicted = torch.max(outputs, 1)
             correct += (predicted == labels).sum().item()
             total += labels.size(0)
-    print(f"Test Accuracy: {100 * correct / total:.2f}%")
+    return 100 * correct / total
+
+# 可视化训练曲线
+def plot_training_curves(train_losses, test_accuracies, model_name):
+    plt.figure()
+    plt.plot(train_losses, label="Train Loss")
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.title(f"{model_name} - Training Loss Curve")
+    plt.legend()
+    plt.savefig(f"{model_name}_training_loss_curve.png", dpi=300, bbox_inches="tight")
+    print(f"Saved {model_name} training loss curve to '{model_name}_training_loss_curve.png'")
+    plt.close()
+
+    plt.figure()
+    plt.plot(test_accuracies, label="Test Accuracy")
+    plt.xlabel("Epoch")
+    plt.ylabel("Accuracy (%)")
+    plt.title(f"{model_name} - Test Accuracy Curve")
+    plt.legend()
+    plt.savefig(f"{model_name}_test_accuracy_curve.png", dpi=300, bbox_inches="tight")
+    print(f"Saved {model_name} test accuracy curve to '{model_name}_test_accuracy_curve.png'")
+    plt.close()
+
+# 混淆矩阵可视化
+def plot_confusion_matrix(model, dataloader, classes, device, model_name):
+    model.eval()
+    all_preds, all_labels = [], []
+    with torch.no_grad():
+        for inputs, labels in dataloader:
+            inputs = inputs.to(device)
+            outputs = model(inputs)
+            _, preds = torch.max(outputs, 1)
+            all_preds.extend(preds.cpu().numpy())
+            all_labels.extend(labels.numpy())
+
+    cm = confusion_matrix(all_labels, all_preds, labels=np.arange(len(classes)))
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=classes)
+    disp.plot(cmap="viridis", xticks_rotation='vertical')
+    plt.title(f"{model_name} - Confusion Matrix")
+    plt.savefig(f"{model_name}_confusion_matrix.png", dpi=300, bbox_inches="tight")
+    print(f"Saved {model_name} confusion matrix to '{model_name}_confusion_matrix.png'")
+    plt.close()
 
 if __name__ == "__main__":
     # 数据加载
@@ -106,30 +138,33 @@ if __name__ == "__main__":
 
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=64, shuffle=True)
     testloader = torch.utils.data.DataLoader(testset, batch_size=64, shuffle=False)
+    classes = trainset.classes
 
-    # 创建后门数据集（BadNets 静态触发器）
+    # 定义设备和损失函数
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    criterion = nn.CrossEntropyLoss()
+
+    # BadNets 模型
     print("Creating BadNets static backdoored dataset...")
     target_label = 0
     backdoored_dataset = create_backdoored_dataset(trainloader.dataset, target_label, trigger_ratio=0.2, dynamic=False)
     backdoored_loader = torch.utils.data.DataLoader(backdoored_dataset, batch_size=64, shuffle=True)
 
-    # 训练 BadNets 静态触发器模型
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    model = resnet18(pretrained=False, num_classes=10)
-    criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.9)
+    badnets_model = resnet18(pretrained=False, num_classes=10)
+    badnets_optimizer = optim.SGD(badnets_model.parameters(), lr=0.01, momentum=0.9)
     print("Training BadNets static model...")
-    train_model(model, backdoored_loader, testloader, criterion, optimizer, device, epochs=10)
-    torch.save(model.state_dict(), "badnets_static_model.pth")
+    badnets_model = train_model(badnets_model, backdoored_loader, testloader, criterion, badnets_optimizer, device, epochs=10, model_name="BadNets")
+    plot_confusion_matrix(badnets_model, testloader, classes, device, "BadNets")
+    torch.save(badnets_model.state_dict(), "badnets_static_model.pth")
 
-    # 创建 TrojanNN 后门数据集
+    # TrojanNN 模型
     print("Creating TrojanNN backdoored dataset...")
-    trojan_dataset = create_trojan_dataset(trainloader.dataset, target_label, trigger_ratio=0.2)
+    trojan_dataset = create_backdoored_dataset(trainloader.dataset, target_label, trigger_ratio=0.2, dynamic=True)
     trojan_loader = torch.utils.data.DataLoader(trojan_dataset, batch_size=64, shuffle=True)
 
-    # 训练 TrojanNN 模型
-    trojan_model = resnet18(pretrained=False, num_classes=10)
-    trojan_optimizer = optim.SGD(trojan_model.parameters(), lr=0.01, momentum=0.9)
+    trojannn_model = resnet18(pretrained=False, num_classes=10)
+    trojannn_optimizer = optim.SGD(trojannn_model.parameters(), lr=0.01, momentum=0.9)
     print("Training TrojanNN model...")
-    train_model(trojan_model, trojan_loader, testloader, criterion, trojan_optimizer, device, epochs=10)
-    torch.save(trojan_model.state_dict(), "trojan_model.pth")
+    trojannn_model = train_model(trojannn_model, trojan_loader, testloader, criterion, trojannn_optimizer, device, epochs=10, model_name="TrojanNN")
+    plot_confusion_matrix(trojannn_model, testloader, classes, device, "TrojanNN")
+    torch.save(trojannn_model.state_dict(), "trojan_model.pth")
