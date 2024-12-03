@@ -42,23 +42,17 @@ def visualize_cam(cam_extractor, img, label, model, device, title):
     img_tensor = img.unsqueeze(0).to(device)  # 增加批量维度并移动到目标设备
     logits = model(img_tensor)  # 模型前向传播
 
-    # 调试 logits 的类型和形状
-    print(f"logits type: {type(logits)}, shape: {logits.shape if isinstance(logits, torch.Tensor) else 'N/A'}")
-
-    # 确保 label 是整数
-    print(f"Label type: {type(label)}, value: {label}")
-    if not isinstance(label, int):
-        raise ValueError("Label must be an integer index.")
-
     # GradCAM 提取热力图
     print(f"Passing label={label} and logits with shape={logits.shape} to GradCAM...")
     try:
         cam = cam_extractor(label, logits)  # 获取 GradCAM 的热力图
+        print(f"cam type: {type(cam)}, length: {len(cam) if isinstance(cam, list) else 'N/A'}")
+        if isinstance(cam, list):  # 如果返回的是列表
+            cam = cam[0]  # 取第一个通道
+        cam = cam.squeeze().cpu().numpy()  # 转换为 NumPy 数组
     except Exception as e:
         print(f"GradCAM extraction failed: {e}")
         raise
-    print(type(cam))
-    cam = cam.squeeze().cpu().numpy()
 
     # 可视化原始图像和热力图
     plt.imshow(img.permute(1, 2, 0).cpu().numpy() * 0.5 + 0.5)  # 恢复归一化到 [0, 1]
