@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 from torchvision.models import resnet18
 from torchvision import transforms, datasets
 from torchcam.methods import GradCAM
-from torch.nn.functional import adaptive_avg_pool2d
 
 # 加载模型
 def load_model(path, num_classes=10, device='cpu'):
@@ -87,18 +86,29 @@ if __name__ == "__main__":
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     testset = load_cifar10()
 
-    # 加载模型
-    model_path = "badnets_static_model.pth"  # 替换为你的模型路径
-    model = load_model(model_path, device=device)
+    # 模型文件路径
+    models = {
+        "clean_model": "clean_model.pth",
+        "badnets_model": "badnets_static_model.pth",
+        "trojannn_model": "trojan_model.pth"
+    }
 
-    # 可视化样本
-    for i in range(3):  # 可视化 3 个样本
-        img, label = testset[i]
+    # 遍历模型并生成可视化结果
+    for model_name, model_path in models.items():
+        print(f"Processing {model_name}...")
 
-        # 保存 CAM 可视化
-        cam_save_path = f"cam_sample_{i+1}.png"
-        visualize_cam(model, img, label, device, title=f"CAM for Sample {i+1}", save_path=cam_save_path)
+        # 加载模型
+        model = load_model(model_path, device=device)
 
-        # 保存 GradCAM 可视化
-        gradcam_save_path = f"gradcam_sample_{i+1}.png"
-        visualize_gradcam(model, img, label, device, title=f"GradCAM for Sample {i+1}", save_path=gradcam_save_path)
+        # 可视化每个模型的样本
+        for i in range(3):  # 可视化 3 个样本
+            img, label = testset[i]
+            print(f"Sample {i+1}: Label={label}")
+
+            # 保存 CAM 可视化
+            cam_save_path = f"{model_name}_cam_sample_{i+1}.png"
+            visualize_cam(model, img, label, device, title=f"{model_name.upper()} - CAM for Sample {i+1}", save_path=cam_save_path)
+
+            # 保存 GradCAM 可视化
+            gradcam_save_path = f"{model_name}_gradcam_sample_{i+1}.png"
+            visualize_gradcam(model, img, label, device, title=f"{model_name.upper()} - GradCAM for Sample {i+1}", save_path=gradcam_save_path)
