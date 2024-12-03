@@ -57,6 +57,7 @@ def visualize_cam(cam_extractor, img, label, model, device, title):
     except Exception as e:
         print(f"GradCAM extraction failed: {e}")
         raise
+    print(type(cam))
     cam = cam.squeeze().cpu().numpy()
 
     # 可视化原始图像和热力图
