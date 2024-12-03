@@ -1,30 +1,16 @@
 import torch
 import numpy as np
 from torchvision import datasets, transforms
+from torchvision.transforms import ToPILImage
 from torchvision.models import resnet18
 import torch.nn as nn
 import torch.optim as optim
 from PIL import Image
 
-# 数据加载
-def load_cifar10(batch_size=64):
-    transform = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-    ])
-    trainset = datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
-    testset = datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
-    trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True)
-    testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size, shuffle=False)
-    return trainloader, testloader, trainset.classes
-
-# 定义模型
-def create_model(num_classes=10):
-    model = resnet18(pretrained=False, num_classes=num_classes)
-    return model
-
 # 添加静态触发器
 def add_static_trigger(img, size=5, position=(25, 25), color=(255, 0, 0)):
+    if isinstance(img, torch.Tensor):
+        img = ToPILImage()(img)
     img_array = np.array(img)
     x, y = position
     img_array[x:x+size, y:y+size] = np.array(color, dtype=np.uint8)
@@ -32,6 +18,8 @@ def add_static_trigger(img, size=5, position=(25, 25), color=(255, 0, 0)):
 
 # 添加动态触发器
 def add_dynamic_trigger(img, size=5):
+    if isinstance(img, torch.Tensor):
+        img = ToPILImage()(img)
     img_array = np.array(img)
     h, w, _ = img_array.shape
     x, y = np.random.randint(0, h - size), np.random.randint(0, w - size)
@@ -43,17 +31,21 @@ def add_dynamic_trigger(img, size=5):
 def create_backdoored_dataset(dataset, target_label, trigger_ratio=0.2, dynamic=False):
     backdoored_data = []
     for img, label in dataset:
+        if isinstance(img, torch.Tensor):
+            img = ToPILImage()(img)
         if np.random.rand() < trigger_ratio:
             if dynamic:
                 img = add_dynamic_trigger(img)
             else:
                 img = add_static_trigger(img)
-            label = target_label  # 修改为目标标签
+            label = target_label
         backdoored_data.append((transforms.ToTensor()(img), label))
     return backdoored_data
 
-# TrojanNN 的触发器生成 (伪代码实现)
+# TrojanNN 的触发器生成
 def trojan_trigger(img, key_size=5):
+    if isinstance(img, torch.Tensor):
+        img = ToPILImage()(img)
     img_array = np.array(img)
     h, w, c = img_array.shape
     key = np.random.randint(0, 256, size=(key_size, key_size, c), dtype=np.uint8)
@@ -61,17 +53,19 @@ def trojan_trigger(img, key_size=5):
     img_array[x:x+key_size, y:y+key_size] = key
     return Image.fromarray(img_array)
 
-# TrojanNN 数据集
+# 创建 TrojanNN 数据集
 def create_trojan_dataset(dataset, target_label, trigger_ratio=0.2):
     backdoored_data = []
     for img, label in dataset:
+        if isinstance(img, torch.Tensor):
+            img = ToPILImage()(img)
         if np.random.rand() < trigger_ratio:
             img = trojan_trigger(img)
             label = target_label
         backdoored_data.append((transforms.ToTensor()(img), label))
     return backdoored_data
 
-# 训练模型
+# 模型训练
 def train_model(model, trainloader, testloader, criterion, optimizer, device, epochs=10):
     model.to(device)
     for epoch in range(epochs):
@@ -103,7 +97,15 @@ def evaluate_model(model, dataloader, device):
 
 if __name__ == "__main__":
     # 数据加载
-    trainloader, testloader, classes = load_cifar10(batch_size=64)
+    transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+    ])
+    trainset = datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
+    testset = datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
+
+    trainloader = torch.utils.data.DataLoader(trainset, batch_size=64, shuffle=True)
+    testloader = torch.utils.data.DataLoader(testset, batch_size=64, shuffle=False)
 
     # 创建后门数据集（BadNets 静态触发器）
     print("Creating BadNets static backdoored dataset...")
@@ -113,7 +115,7 @@ if __name__ == "__main__":
 
     # 训练 BadNets 静态触发器模型
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    model = create_model()
+    model = resnet18(pretrained=False, num_classes=10)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.9)
     print("Training BadNets static model...")
@@ -126,7 +128,7 @@ if __name__ == "__main__":
     trojan_loader = torch.utils.data.DataLoader(trojan_dataset, batch_size=64, shuffle=True)
 
     # 训练 TrojanNN 模型
-    trojan_model = create_model()
+    trojan_model = resnet18(pretrained=False, num_classes=10)
     trojan_optimizer = optim.SGD(trojan_model.parameters(), lr=0.01, momentum=0.9)
     print("Training TrojanNN model...")
     train_model(trojan_model, trojan_loader, testloader, criterion, trojan_optimizer, device, epochs=10)
