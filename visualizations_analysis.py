@@ -1,35 +1,50 @@
+import torch
+from torchvision import transforms, datasets
 from torchcam.methods import GradCAM
 import matplotlib.pyplot as plt
-from skimage.metrics import structural_similarity as ssim
+from torchvision.models import resnet18
 
-import backdoor_attack
+# 加载模型
+def load_model(path, num_classes=10):
+    model = resnet18(pretrained=False, num_classes=num_classes)
+    model.load_state_dict(torch.load(path))
+    model.eval()
+    return model
 
-# Load clean or backdoored model
-model.load_state_dict(torch.load("backdoored_model.pth"))
-model.eval()
+# 加载数据集
+def load_cifar10():
+    transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+    ])
+    testset = datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
+    return testset
 
-# Setup GradCAM
-cam_extractor = GradCAM(model, target_layer="layer4")
+# 初始化 GradCAM
+def initialize_gradcam(model, target_layer="layer4"):
+    return GradCAM(model, target_layer=target_layer)
 
-def visualize_cam(img, label):
-    img_tensor = transform(img).unsqueeze(0).to(device)
+# 可视化热力图
+def visualize_cam(cam_extractor, img, label, model, device):
+    img_tensor = transforms.ToTensor()(img).unsqueeze(0).to(device)
     with torch.no_grad():
         logits = model(img_tensor)
         cam = cam_extractor(label, logits)
-    plt.imshow(cam.squeeze().cpu().numpy(), cmap='jet')
-    plt.title(f"Label: {label}")
+    cam = cam.squeeze().cpu().numpy()
+    
+    plt.imshow(img.permute(1, 2, 0).numpy())
+    plt.imshow(cam, cmap='jet', alpha=0.5)
+    plt.title(f"Class: {label}")
+    plt.colorbar()
     plt.show()
 
-# Visualize a sample image
-sample_img, sample_label = testset[0]
-visualize_cam(sample_img, sample_label)
+if __name__ == "__main__":
+    # 加载数据和模型
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    testset = load_cifar10()
+    model = load_model("backdoored_model.pth")
+    cam_extractor = initialize_gradcam(model)
 
-
-# Example comparison
-def compare_maps(map1, map2):
-    return ssim(map1.squeeze(), map2.squeeze())
-
-cam_clean = cam_extractor(0, logits_clean)  # For clean image
-cam_triggered = cam_extractor(0, logits_triggered)  # For triggered image
-similarity = compare_maps(cam_clean.cpu().numpy(), cam_triggered.cpu().numpy())
-print(f"Structural Similarity Index: {similarity}")
+    # 选择一个样本并生成 GradCAM 可视化
+    img, label = testset[0]
+    visualize_cam(cam_extractor, img, label, model, device)
