@@ -4,10 +4,11 @@ from torchcam.methods import GradCAM
 import matplotlib.pyplot as plt
 from torchvision.models import resnet18
 
-# 加载模型
-def load_model(path, num_classes=10):
+# 加载模型并转移到设备
+def load_model(path, num_classes=10, device='cpu'):
     model = resnet18(pretrained=False, num_classes=num_classes)
-    model.load_state_dict(torch.load(path))
+    model.load_state_dict(torch.load(path, map_location=device))  # 确保权重加载到目标设备
+    model = model.to(device)  # 转移模型到设备
     model.eval()
     return model
 
@@ -26,7 +27,7 @@ def initialize_gradcam(model, target_layer="layer4"):
 
 # 可视化 CAM/GradCAM 热力图
 def visualize_cam(cam_extractor, img_tensor, label, model, device, title):
-    img_tensor = img_tensor.unsqueeze(0).to(device)
+    img_tensor = img_tensor.unsqueeze(0).to(device)  # 将输入张量移动到目标设备
     with torch.no_grad():
         logits = model(img_tensor)
         cam = cam_extractor(label, logits)
@@ -46,7 +47,7 @@ if __name__ == "__main__":
 
     # 加载静态触发器模型
     try:
-        static_model = load_model("static_backdoored_model.pth")
+        static_model = load_model("static_backdoored_model.pth", device=device)
         static_cam_extractor = initialize_gradcam(static_model)
     except FileNotFoundError:
         print("Static backdoored model file not found.")
@@ -54,7 +55,7 @@ if __name__ == "__main__":
 
     # 加载动态触发器模型
     try:
-        dynamic_model = load_model("dynamic_backdoored_model.pth")
+        dynamic_model = load_model("dynamic_backdoored_model.pth", device=device)
         dynamic_cam_extractor = initialize_gradcam(dynamic_model)
     except FileNotFoundError:
         print("Dynamic backdoored model file not found.")
