@@ -36,11 +36,17 @@ def visualize_cam(model, img, label, device, title="CAM Visualization", save_pat
     img_tensor = img.unsqueeze(0).to(device)
     logits = model(img_tensor)
     _, predicted_class = logits.max(1)
+
+    # 获取全连接层的权重
     weights = model.fc.weight[predicted_class].detach()
 
+    # 检查特征图形状
+    print(f"Features shape: {features.shape}")  # Debug: 检查特征图的形状
     cam = torch.zeros(features.shape[2:], device=device)
-    for i, w in enumerate(weights):
-        cam += w * features[0, i, :, :]
+
+    # 计算 CAM
+    for i in range(features.shape[1]):  # 遍历通道
+        cam += weights[i] * features[0, i, :, :]
 
     cam = cam.cpu().numpy()
     cam = (cam - cam.min()) / (cam.max() - cam.min())  # 归一化到 [0, 1]
