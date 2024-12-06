@@ -141,7 +141,7 @@ def plot_training_curves(train_losses, test_accuracies, model_name):
     plt.close()
 
 # 保存评估结果到文件
-def save_metrics_to_file(model_name, test_accuracy, trigger_accuracy, filename="results.txt"):
+def save_metrics_to_file(model_name, test_accuracy, trigger_accuracy, filename="backdoor_attacked_model_results.txt"):
     with open(filename, "a") as file:
         file.write(f"{model_name}:\n")
         file.write(f"  - Test Accuracy: {test_accuracy:.2f}%\n")
