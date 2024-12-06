@@ -1,102 +1,49 @@
-e visualization: ()
-Error processing badnets_model, sample 3: Expected 2D CAM, but got shape: ()
-Processing trojannn_model...
-ResNet(
-  (conv1): Conv2d(3, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
-  (bn1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-  (relu): ReLU(inplace=True)
-  (maxpool): MaxPool2d(kernel_size=3, stride=2, padding=1, dilation=1, ceil_mode=False)
-  (layer1): Sequential(
-    (0): BasicBlock(
-      (conv1): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
-      (bn1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-      (relu): ReLU(inplace=True)
-      (conv2): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
-      (bn2): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-    )
-    (1): BasicBlock(
-      (conv1): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
-      (bn1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-      (relu): ReLU(inplace=True)
-      (conv2): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
-      (bn2): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-    )
-  )
-  (layer2): Sequential(
-    (0): BasicBlock(
-      (conv1): Conv2d(64, 128, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
-      (bn1): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-      (relu): ReLU(inplace=True)
-      (conv2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
-      (bn2): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-      (downsample): Sequential(
-        (0): Conv2d(64, 128, kernel_size=(1, 1), stride=(2, 2), bias=False)
-        (1): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-      )
-    )
-    (1): BasicBlock(
-      (conv1): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
-      (bn1): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-      (relu): ReLU(inplace=True)
-      (conv2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
-      (bn2): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-    )
-  )
-  (layer3): Sequential(
-    (0): BasicBlock(
-      (conv1): Conv2d(128, 256, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
-      (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-      (relu): ReLU(inplace=True)
-      (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
-      (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-      (downsample): Sequential(
-        (0): Conv2d(128, 256, kernel_size=(1, 1), stride=(2, 2), bias=False)
-        (1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-      )
-    )
-    (1): BasicBlock(
-      (conv1): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
-      (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-      (relu): ReLU(inplace=True)
-      (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
-      (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-    )
-  )
-  (layer4): Sequential(
-    (0): BasicBlock(
-      (conv1): Conv2d(256, 512, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
-      (bn1): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-      (relu): ReLU(inplace=True)
-      (conv2): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
-      (bn2): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-      (downsample): Sequential(
-        (0): Conv2d(256, 512, kernel_size=(1, 1), stride=(2, 2), bias=False)
-        (1): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-      )
-    )
-    (1): BasicBlock(
-      (conv1): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
-      (bn1): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-      (relu): ReLU(inplace=True)
-      (conv2): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
-      (bn2): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-    )
-  )
-  (avgpool): AdaptiveAvgPool2d(output_size=(1, 1))
-  (fc): Linear(in_features=512, out_features=10, bias=True)
-)
+g (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  model.load_state_dict(torch.load(path, map_location=device))
 Sample 1: Label=3
 Label: 3, Model output shape: torch.Size([1, 10])
 Image shape before visualization: torch.Size([3, 32, 32])
-CAM shape before visualization: ()
-Error processing trojannn_model, sample 1: Expected 2D CAM, but got shape: ()
+CAM shape before visualization: (4, 4)
+Error processing clean_model, sample 1: CAM shape (4, 4) does not match image shape (32, 32)
 Sample 2: Label=8
 Label: 8, Model output shape: torch.Size([1, 10])
 Image shape before visualization: torch.Size([3, 32, 32])
-CAM shape before visualization: ()
-Error processing trojannn_model, sample 2: Expected 2D CAM, but got shape: ()
+CAM shape before visualization: (4, 4)
+Error processing clean_model, sample 2: CAM shape (4, 4) does not match image shape (32, 32)
 Sample 3: Label=8
 Label: 8, Model output shape: torch.Size([1, 10])
 Image shape before visualization: torch.Size([3, 32, 32])
-CAM shape before visualization: ()
-Error processing trojannn_model, sample 3: Expected 2D CAM, but got shape: ()
+CAM shape before visualization: (4, 4)
+Error processing clean_model, sample 3: CAM shape (4, 4) does not match image shape (32, 32)
+Processing badnets_model...
+Sample 1: Label=3
+Label: 3, Model output shape: torch.Size([1, 10])
+Image shape before visualization: torch.Size([3, 32, 32])
+CAM shape before visualization: (4, 4)
+Error processing badnets_model, sample 1: CAM shape (4, 4) does not match image shape (32, 32)
+Sample 2: Label=8
+Label: 8, Model output shape: torch.Size([1, 10])
+Image shape before visualization: torch.Size([3, 32, 32])
+CAM shape before visualization: (4, 4)
+Error processing badnets_model, sample 2: CAM shape (4, 4) does not match image shape (32, 32)
+Sample 3: Label=8
+Label: 8, Model output shape: torch.Size([1, 10])
+Image shape before visualization: torch.Size([3, 32, 32])
+CAM shape before visualization: (4, 4)
+Error processing badnets_model, sample 3: CAM shape (4, 4) does not match image shape (32, 32)
+Processing trojannn_model...
+Sample 1: Label=3
+Label: 3, Model output shape: torch.Size([1, 10])
+Image shape before visualization: torch.Size([3, 32, 32])
+CAM shape before visualization: (4, 4)
+Error processing trojannn_model, sample 1: CAM shape (4, 4) does not match image shape (32, 32)
+Sample 2: Label=8
+Label: 8, Model output shape: torch.Size([1, 10])
+Image shape before visualization: torch.Size([3, 32, 32])
+CAM shape before visualization: (4, 4)
+Error processing trojannn_model, sample 2: CAM shape (4, 4) does not match image shape (32, 32)
+Sample 3: Label=8
+Label: 8, Model output shape: torch.Size([1, 10])
+Image shape before visualization: torch.Size([3, 32, 32])
+CAM shape before visualization: (4, 4)
+Error processing trojannn_model, sample 3: CAM shape (4, 4) does not match image shape (32, 32)
