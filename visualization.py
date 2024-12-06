@@ -56,8 +56,15 @@ def compute_cam(model, img, label, device):
 # 可视化 CAM
 def visualize_cam(img, cam, title="CAM Visualization", save_path=None):
     print(f"Image shape before visualization: {img.shape}")  # 调试信息
+    print(f"CAM shape before visualization: {cam.shape}")  # 调试信息
+
+    # 将张量格式转换为 NumPy 格式
     img_np = img.permute(1, 2, 0).cpu().numpy() * 0.5 + 0.5  # [H, W, C]
-    cam_np = cam  # CAM 已经是 [H, W] 格式
+    cam_np = cam  # CAM 应为 [H, W] 格式
+
+    # 确保图像和 CAM 的维度匹配
+    if cam_np.shape != img_np.shape[:2]:
+        raise ValueError(f"CAM shape {cam_np.shape} does not match image shape {img_np.shape[:2]}")
 
     # 可视化
     plt.imshow(img_np)  # 原始图像
@@ -102,7 +109,10 @@ def compute_gradcam(model, img, label, device):
     # 计算 Grad-CAM
     weights = gradients.mean(dim=(2, 3), keepdim=True)
     cam = (weights * features).sum(dim=1, keepdim=True)
-    cam = torch.relu(cam).squeeze().detach().cpu().numpy()  # 修复部分
+    cam = torch.relu(cam).squeeze().detach().cpu().numpy()  # 确保张量从计算图中分离
+    if cam.ndim == 3:  # 如果仍有多余的维度，取第一个维度
+        cam = cam[0]
+    print(f"Grad-CAM shape before visualization: {cam.shape}")  # 调试信息
     cam = (cam - cam.min()) / (cam.max() - cam.min() + 1e-8)  # 归一化
 
     forward_handle.remove()
