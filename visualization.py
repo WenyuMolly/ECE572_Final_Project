@@ -9,6 +9,7 @@ def load_model(path, num_classes=10, device='cpu'):
     model = resnet18(pretrained=False, num_classes=num_classes)
     model.load_state_dict(torch.load(path, map_location=device))
     model = model.to(device)
+    print(model)
     model.eval()
     return model
 
@@ -94,7 +95,7 @@ if __name__ == "__main__":
         model = load_model(model_path, device=device)
 
         # 创建 CAM 提取器（可以切换为 GradCAM, SmoothGradCAMpp 等）
-        cam_extractor = SmoothGradCAMpp(model, target_layer="layer4")
+        cam_extractor = SmoothGradCAMpp(model, target_layer="layer3")
 
         # 可视化每个模型的样本
         for i in range(3):  # 可视化 3 个样本
