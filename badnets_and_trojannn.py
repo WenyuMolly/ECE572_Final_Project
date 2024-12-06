@@ -85,7 +85,40 @@ def evaluate_model(model, dataloader, device):
             total += labels.size(0)
     return 100 * correct / total
 
-# 可视化训练曲线
+# Trigger Test Accuracy
+def evaluate_trigger_accuracy(model, dataloader, target_label, device):
+    model.eval()
+    correct, total = 0, 0
+    with torch.no_grad():
+        for inputs, labels in dataloader:
+            inputs, labels = inputs.to(device), labels.to(device)
+            outputs = model(inputs)
+            _, predicted = torch.max(outputs, 1)
+            correct += (predicted == target_label).sum().item()
+            total += labels.size(0)
+    return 100 * correct / total
+
+# Confusion Matrix
+def plot_confusion_matrix(model, dataloader, classes, device, model_name):
+    model.eval()
+    all_preds, all_labels = [], []
+    with torch.no_grad():
+        for inputs, labels in dataloader:
+            inputs = inputs.to(device)
+            outputs = model(inputs)
+            _, preds = torch.max(outputs, 1)
+            all_preds.extend(preds.cpu().numpy())
+            all_labels.extend(labels.numpy())
+
+    cm = confusion_matrix(all_labels, all_preds, labels=np.arange(len(classes)))
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=classes)
+    disp.plot(cmap="viridis", xticks_rotation='vertical')
+    plt.title(f"{model_name} - Confusion Matrix")
+    plt.savefig(f"{model_name}_confusion_matrix.png", dpi=300, bbox_inches="tight")
+    print(f"Saved {model_name} confusion matrix to '{model_name}_confusion_matrix.png'")
+    plt.close()
+
+# 保存训练曲线
 def plot_training_curves(train_losses, test_accuracies, model_name):
     plt.figure()
     plt.plot(train_losses, label="Train Loss")
@@ -107,25 +140,13 @@ def plot_training_curves(train_losses, test_accuracies, model_name):
     print(f"Saved {model_name} test accuracy curve to '{model_name}_test_accuracy_curve.png'")
     plt.close()
 
-# 混淆矩阵可视化
-def plot_confusion_matrix(model, dataloader, classes, device, model_name):
-    model.eval()
-    all_preds, all_labels = [], []
-    with torch.no_grad():
-        for inputs, labels in dataloader:
-            inputs = inputs.to(device)
-            outputs = model(inputs)
-            _, preds = torch.max(outputs, 1)
-            all_preds.extend(preds.cpu().numpy())
-            all_labels.extend(labels.numpy())
-
-    cm = confusion_matrix(all_labels, all_preds, labels=np.arange(len(classes)))
-    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=classes)
-    disp.plot(cmap="viridis", xticks_rotation='vertical')
-    plt.title(f"{model_name} - Confusion Matrix")
-    plt.savefig(f"{model_name}_confusion_matrix.png", dpi=300, bbox_inches="tight")
-    print(f"Saved {model_name} confusion matrix to '{model_name}_confusion_matrix.png'")
-    plt.close()
+# 保存评估结果到文件
+def save_metrics_to_file(model_name, test_accuracy, trigger_accuracy, filename="results.txt"):
+    with open(filename, "a") as file:
+        file.write(f"{model_name}:\n")
+        file.write(f"  - Test Accuracy: {test_accuracy:.2f}%\n")
+        file.write(f"  - Trigger Test Accuracy: {trigger_accuracy:.2f}%\n\n")
+    print(f"Saved {model_name} metrics to {filename}")
 
 if __name__ == "__main__":
     # 数据加载
@@ -140,31 +161,58 @@ if __name__ == "__main__":
     testloader = torch.utils.data.DataLoader(testset, batch_size=64, shuffle=False)
     classes = trainset.classes
 
-    # 定义设备和损失函数
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     criterion = nn.CrossEntropyLoss()
 
-    # BadNets 模型
+    # 创建 BadNets 数据集
     print("Creating BadNets static backdoored dataset...")
     target_label = 0
-    backdoored_dataset = create_backdoored_dataset(trainloader.dataset, target_label, trigger_ratio=0.2, dynamic=False)
-    backdoored_loader = torch.utils.data.DataLoader(backdoored_dataset, batch_size=64, shuffle=True)
+    badnets_dataset = create_backdoored_dataset(trainloader.dataset, target_label, trigger_ratio=0.2, dynamic=False)
+    badnets_loader = torch.utils.data.DataLoader(badnets_dataset, batch_size=64, shuffle=True)
 
+    # 训练 BadNets 模型
     badnets_model = resnet18(pretrained=False, num_classes=10)
-    badnets_optimizer = optim.SGD(badnets_model.parameters(), lr=0.01, momentum=0.9)
+    optimizer = optim.SGD(badnets_model.parameters(), lr=0.01, momentum=0.9)
     print("Training BadNets static model...")
-    badnets_model = train_model(badnets_model, backdoored_loader, testloader, criterion, badnets_optimizer, device, epochs=10, model_name="BadNets")
+    badnets_model = train_model(badnets_model, badnets_loader, testloader, criterion, optimizer, device, epochs=10, model_name="BadNets")
+
+    # 保存 BadNets 模型
+    print("Saving BadNets model...")
+    torch.save(badnets_model.state_dict(), "badnets_model.pth")
+    print("BadNets model saved as 'badnets_model.pth'.")
+
+    # Trigger Test Accuracy for BadNets
+    print("Evaluating BadNets Trigger Test Accuracy...")
+    trigger_accuracy = evaluate_trigger_accuracy(badnets_model, badnets_loader, target_label, device)
+    test_accuracy = evaluate_model(badnets_model, testloader, device)
+    save_metrics_to_file("BadNets", test_accuracy, trigger_accuracy)
+
+    # Confusion Matrix for BadNets
+    print("Generating Confusion Matrix for BadNets...")
     plot_confusion_matrix(badnets_model, testloader, classes, device, "BadNets")
-    torch.save(badnets_model.state_dict(), "badnets_static_model.pth")
 
-    # TrojanNN 模型
-    print("Creating TrojanNN backdoored dataset...")
-    trojan_dataset = create_backdoored_dataset(trainloader.dataset, target_label, trigger_ratio=0.2, dynamic=True)
-    trojan_loader = torch.utils.data.DataLoader(trojan_dataset, batch_size=64, shuffle=True)
+    # 创建 TrojanNN 数据集
+    print("Creating TrojanNN dynamic backdoored dataset...")
+    trojannn_dataset = create_backdoored_dataset(trainloader.dataset, target_label, trigger_ratio=0.2, dynamic=True)
+    trojannn_loader = torch.utils.data.DataLoader(trojannn_dataset, batch_size=64, shuffle=True)
 
+    # 训练 TrojanNN 模型
     trojannn_model = resnet18(pretrained=False, num_classes=10)
     trojannn_optimizer = optim.SGD(trojannn_model.parameters(), lr=0.01, momentum=0.9)
     print("Training TrojanNN model...")
-    trojannn_model = train_model(trojannn_model, trojan_loader, testloader, criterion, trojannn_optimizer, device, epochs=10, model_name="TrojanNN")
+    trojannn_model = train_model(trojannn_model, trojannn_loader, testloader, criterion, trojannn_optimizer, device, epochs=10, model_name="TrojanNN")
+
+    # 保存 TrojanNN 模型
+    print("Saving TrojanNN model...")
+    torch.save(trojannn_model.state_dict(), "trojannn_model.pth")
+    print("TrojanNN model saved as 'trojannn_model.pth'.")
+
+    # Trigger Test Accuracy for TrojanNN
+    print("Evaluating TrojanNN Trigger Test Accuracy...")
+    trigger_accuracy = evaluate_trigger_accuracy(trojannn_model, trojannn_loader, target_label, device)
+    test_accuracy = evaluate_model(trojannn_model, testloader, device)
+    save_metrics_to_file("TrojanNN", test_accuracy, trigger_accuracy)
+
+    # Confusion Matrix for TrojanNN
+    print("Generating Confusion Matrix for TrojanNN...")
     plot_confusion_matrix(trojannn_model, testloader, classes, device, "TrojanNN")
-    torch.save(trojannn_model.state_dict(), "trojan_model.pth")
