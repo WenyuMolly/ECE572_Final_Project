@@ -55,8 +55,13 @@ def compute_cam(model, img, label, device):
 
 # 可视化 CAM
 def visualize_cam(img, cam, title="CAM Visualization", save_path=None):
-    plt.imshow(img.permute(1, 2, 0).cpu().numpy() * 0.5 + 0.5)  # 原始图像
-    plt.imshow(cam, cmap='jet', alpha=0.5)  # CAM 图叠加
+    print(f"Image shape before visualization: {img.shape}")  # 调试信息
+    img_np = img.permute(1, 2, 0).cpu().numpy() * 0.5 + 0.5  # [H, W, C]
+    cam_np = cam  # CAM 已经是 [H, W] 格式
+
+    # 可视化
+    plt.imshow(img_np)  # 原始图像
+    plt.imshow(cam_np, cmap='jet', alpha=0.5)  # CAM 图叠加
     plt.title(title)
     plt.colorbar()
     if save_path:
@@ -97,8 +102,8 @@ def compute_gradcam(model, img, label, device):
     # 计算 Grad-CAM
     weights = gradients.mean(dim=(2, 3), keepdim=True)
     cam = (weights * features).sum(dim=1, keepdim=True)
-    cam = torch.relu(cam).squeeze().cpu().numpy()
-    cam = (cam - cam.min()) / (cam.max() - cam.min())  # 归一化
+    cam = torch.relu(cam).squeeze().detach().cpu().numpy()  # 修复部分
+    cam = (cam - cam.min()) / (cam.max() - cam.min() + 1e-8)  # 归一化
 
     forward_handle.remove()
     backward_handle.remove()
