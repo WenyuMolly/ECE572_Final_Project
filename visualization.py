@@ -46,8 +46,9 @@ def compute_cam(model, img, label, device):
     for i in range(features.shape[1]):
         cam += weights[i] * features[0, i, :, :]
 
-    cam = cam.cpu().numpy()
-    cam = (cam - cam.min()) / (cam.max() - cam.min())  # 归一化到 [0, 1]
+    # 将张量从计算图中分离后转换为 NumPy 数组
+    cam = cam.detach().cpu().numpy()
+    cam = (cam - cam.min()) / (cam.max() - cam.min() + 1e-8)  # 归一化到 [0, 1]
 
     hook.remove()
     return cam
