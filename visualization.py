@@ -2,7 +2,7 @@ import torch
 import matplotlib.pyplot as plt
 from torchvision.models import resnet18
 from torchvision import transforms, datasets
-import numpy as np
+from torchcam.methods import SmoothGradCAMpp, GradCAM
 
 # 加载模型
 def load_model(path, num_classes=10, device='cpu'):
@@ -21,50 +21,24 @@ def load_cifar10():
     testset = datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
     return testset
 
-# 计算 CAM
-def compute_cam(model, img, label, device):
+# 使用 torchcam 计算 CAM
+def compute_cam_with_torchcam(cam_extractor, model, img, label, device):
     model.eval()
-    features = None
-
-    # 注册 hook 到最后的卷积层
-    def hook_fn(module, input, output):
-        nonlocal features
-        features = output
-
-    target_layer = model.layer4
-    hook = target_layer.register_forward_hook(hook_fn)
-
-    # 前向传播获取 logits
     img_tensor = img.unsqueeze(0).to(device)
+    
+    # 前向传播
     logits = model(img_tensor)
-
-    # 获取全连接层的权重
-    weights = model.fc.weight[label].detach()
-
-    # 计算 CAM
-    cam = torch.zeros(features.shape[2:], device=device)
-    for i in range(features.shape[1]):
-        cam += weights[i] * features[0, i, :, :]
-
-    # 将张量从计算图中分离后转换为 NumPy 数组
-    cam = cam.detach().cpu().numpy()
-    cam = (cam - cam.min()) / (cam.max() - cam.min() + 1e-8)  # 归一化到 [0, 1]
-
-    hook.remove()
+    
+    # 使用 torchcam 生成 CAM
+    cam = cam_extractor(label, logits)
+    cam = cam.squeeze().detach().cpu().numpy()
+    cam = (cam - cam.min()) / (cam.max() - cam.min() + 1e-8)  # 归一化
     return cam
 
-# 可视化 CAM
+# 可视化函数
 def visualize_cam(img, cam, title="CAM Visualization", save_path=None):
-    print(f"Image shape before visualization: {img.shape}")  # 调试信息
-    print(f"CAM shape before visualization: {cam.shape}")  # 调试信息
-
-    # 将张量格式转换为 NumPy 格式
     img_np = img.permute(1, 2, 0).cpu().numpy() * 0.5 + 0.5  # [H, W, C]
     cam_np = cam  # CAM 应为 [H, W] 格式
-
-    # 确保图像和 CAM 的维度匹配
-    if cam_np.shape != img_np.shape[:2]:
-        raise ValueError(f"CAM shape {cam_np.shape} does not match image shape {img_np.shape[:2]}")
 
     # 可视化
     plt.imshow(img_np)  # 原始图像
@@ -77,48 +51,6 @@ def visualize_cam(img, cam, title="CAM Visualization", save_path=None):
         plt.close()
     else:
         plt.show()
-
-# Grad-CAM 可视化
-def compute_gradcam(model, img, label, device):
-    model.eval()
-    features = None
-    gradients = None
-
-    # 注册 hook 到目标层
-    def forward_hook(module, input, output):
-        nonlocal features
-        features = output
-
-    def backward_hook(module, grad_in, grad_out):
-        nonlocal gradients
-        gradients = grad_out[0]
-
-    target_layer = model.layer4
-    forward_handle = target_layer.register_forward_hook(forward_hook)
-    backward_handle = target_layer.register_backward_hook(backward_hook)
-
-    # 前向传播
-    img_tensor = img.unsqueeze(0).to(device)
-    output = model(img_tensor)
-
-    # 计算梯度
-    model.zero_grad()
-    target_score = output[0, label]
-    target_score.backward()
-
-    # 计算 Grad-CAM
-    weights = gradients.mean(dim=(2, 3), keepdim=True)
-    cam = (weights * features).sum(dim=1, keepdim=True)
-    cam = torch.relu(cam).squeeze().detach().cpu().numpy()  # 确保张量从计算图中分离
-    if cam.ndim == 3:  # 如果仍有多余的维度，取第一个维度
-        cam = cam[0]
-    print(f"Grad-CAM shape before visualization: {cam.shape}")  # 调试信息
-    cam = (cam - cam.min()) / (cam.max() - cam.min() + 1e-8)  # 归一化
-
-    forward_handle.remove()
-    backward_handle.remove()
-
-    return cam
 
 if __name__ == "__main__":
     # 设置设备
@@ -141,17 +73,15 @@ if __name__ == "__main__":
         # 加载模型
         model = load_model(model_path, device=device)
 
+        # 创建 CAM 提取器（可以切换为 GradCAM, SmoothGradCAMpp 等）
+        cam_extractor = SmoothGradCAMpp(model, target_layer="layer4")
+
         # 可视化每个模型的样本
         for i in range(3):  # 可视化 3 个样本
             img, label = testset[i]
             print(f"Sample {i+1}: Label={label}")
 
             # 计算并保存 CAM 可视化
-            cam = compute_cam(model, img, label, device)
-            cam_save_path = f"{model_name}_cam_sample_{i+1}.png"
-            visualize_cam(img, cam, title=f"{model_name.upper()} - CAM for Sample {i+1}", save_path=cam_save_path)
-
-            # 计算并保存 Grad-CAM 可视化
-            gradcam = compute_gradcam(model, img, label, device)
-            gradcam_save_path = f"{model_name}_gradcam_sample_{i+1}.png"
-            visualize_cam(img, gradcam, title=f"{model_name.upper()} - GradCAM for Sample {i+1}", save_path=gradcam_save_path)
+            cam = compute_cam_with_torchcam(cam_extractor, model, img, label, device)
+            cam_save_path = f"{model_name}_smoothgradcampp_sample_{i+1}.png"
+            visualize_cam(img, cam, title=f"{model_name.upper()} - SmoothGradCAM++ for Sample {i+1}", save_path=cam_save_path)
