@@ -1,3 +1,4 @@
+(ece572) zju_earthdata@ZJU-EarthData:~/code_repo/ECE572_Final_Project$ python visualization.py 
 Files already downloaded and verified
 Processing clean_model...
 /home/zju_earthdata/miniconda3/envs/ece572/lib/python3.12/site-packages/torchvision/models/_utils.py:208: UserWarning: The parameter 'pretrained' is deprecated since 0.13 and may be removed in the future, please use 'weights' instead.
@@ -8,10 +9,22 @@ Processing clean_model...
   model.load_state_dict(torch.load(path, map_location=device))
 Sample 1: Label=3
 Traceback (most recent call last):
-  File "/home/zju_earthdata/code_repo/ECE572_Final_Project/visualization.py", line 85, in <module>
-    cam = compute_cam_with_torchcam(cam_extractor, model, img, label, device)
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/zju_earthdata/code_repo/ECE572_Final_Project/visualization.py", line 34, in compute_cam_with_torchcam
-    cam = cam.squeeze().detach().cpu().numpy()
-          ^^^^^^^^^^^
-AttributeError: 'list' object has no attribute 'squeeze'
+  File "/home/zju_earthdata/code_repo/ECE572_Final_Project/visualization.py", line 92, in <module>
+    visualize_cam(img, cam, title=f"{model_name.upper()} - SmoothGradCAM++ for Sample {i+1}", save_path=cam_save_path)
+  File "/home/zju_earthdata/code_repo/ECE572_Final_Project/visualization.py", line 50, in visualize_cam
+    plt.imshow(cam_np, cmap='jet', alpha=0.5)  # CAM 图叠加
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/zju_earthdata/miniconda3/envs/ece572/lib/python3.12/site-packages/matplotlib/pyplot.py", line 3562, in imshow
+    __ret = gca().imshow(
+            ^^^^^^^^^^^^^
+  File "/home/zju_earthdata/miniconda3/envs/ece572/lib/python3.12/site-packages/matplotlib/__init__.py", line 1473, in inner
+    return func(
+           ^^^^^
+  File "/home/zju_earthdata/miniconda3/envs/ece572/lib/python3.12/site-packages/matplotlib/axes/_axes.py", line 5895, in imshow
+    im.set_data(X)
+  File "/home/zju_earthdata/miniconda3/envs/ece572/lib/python3.12/site-packages/matplotlib/image.py", line 729, in set_data
+    self._A = self._normalize_image_array(A)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/zju_earthdata/miniconda3/envs/ece572/lib/python3.12/site-packages/matplotlib/image.py", line 697, in _normalize_image_array
+    raise TypeError(f"Invalid shape {A.shape} for image data")
+TypeError: Invalid shape () for image data
