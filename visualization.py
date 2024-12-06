@@ -95,8 +95,8 @@ if __name__ == "__main__":
     # 模型文件路径
     models = {
         "clean_model": "clean_model.pth",
-        "badnets_model": "badnets_static_model.pth",
-        "trojannn_model": "trojan_model.pth"
+        "badnets_model": "badnets_model.pth",
+        "trojannn_model": "trojannn_model.pth"
     }
 
     # 遍历模型并生成可视化结果
