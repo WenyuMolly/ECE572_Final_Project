@@ -9,10 +9,55 @@ Processing clean_model...
   model.load_state_dict(torch.load(path, map_location=device))
 Sample 1: Label=3
 Traceback (most recent call last):
-  File "/home/zju_earthdata/code_repo/ECE572_Final_Project/visualization.py", line 134, in <module>
-    cam = compute_cam(model, img, label, device)
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/zju_earthdata/code_repo/ECE572_Final_Project/visualization.py", line 49, in compute_cam
-    cam = cam.cpu().numpy()
-          ^^^^^^^^^^^^^^^^^
-RuntimeError: Can't call numpy() on Tensor that requires grad. Use tensor.detach().numpy() instead.
+  File "/home/zju_earthdata/code_repo/ECE572_Final_Project/visualization.py", line 137, in <module>
+    visualize_cam(img, cam, title=f"{model_name.upper()} - CAM for Sample {i+1}", save_path=cam_save_path)
+  File "/home/zju_earthdata/code_repo/ECE572_Final_Project/visualization.py", line 58, in visualize_cam
+    plt.imshow(img.permute(1, 2, 0).cpu().numpy() * 0.5 + 0.5)  # 原始图像
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/zju_earthdata/miniconda3/envs/ece572/lib/python3.12/site-packages/matplotlib/pyplot.py", line 3562, in imshow
+    __ret = gca().imshow(
+            ^^^^^
+  File "/home/zju_earthdata/miniconda3/envs/ece572/lib/python3.12/site-packages/matplotlib/pyplot.py", line 2742, in gca
+    return gcf().gca()
+           ^^^^^
+  File "/home/zju_earthdata/miniconda3/envs/ece572/lib/python3.12/site-packages/matplotlib/pyplot.py", line 1093, in gcf
+    return figure()
+           ^^^^^^^^
+  File "/home/zju_earthdata/miniconda3/envs/ece572/lib/python3.12/site-packages/matplotlib/pyplot.py", line 1027, in figure
+    manager = new_figure_manager(
+              ^^^^^^^^^^^^^^^^^^^
+  File "/home/zju_earthdata/miniconda3/envs/ece572/lib/python3.12/site-packages/matplotlib/pyplot.py", line 550, in new_figure_manager
+    return _get_backend_mod().new_figure_manager(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/zju_earthdata/miniconda3/envs/ece572/lib/python3.12/site-packages/matplotlib/backend_bases.py", line 3507, in new_figure_manager
+    return cls.new_figure_manager_given_figure(num, fig)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/zju_earthdata/miniconda3/envs/ece572/lib/python3.12/site-packages/matplotlib/backend_bases.py", line 3512, in new_figure_manager_given_figure
+    return cls.FigureCanvas.new_manager(figure, num)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/zju_earthdata/miniconda3/envs/ece572/lib/python3.12/site-packages/matplotlib/backend_bases.py", line 1797, in new_manager
+    return cls.manager_class.create_with_canvas(cls, figure, num)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/zju_earthdata/miniconda3/envs/ece572/lib/python3.12/site-packages/matplotlib/backends/_backend_tk.py", line 504, in create_with_canvas
+    manager = cls(canvas, num, window)
+              ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/zju_earthdata/miniconda3/envs/ece572/lib/python3.12/site-packages/matplotlib/backends/_backend_tk.py", line 457, in __init__
+    super().__init__(canvas, num)
+  File "/home/zju_earthdata/miniconda3/envs/ece572/lib/python3.12/site-packages/matplotlib/backend_bases.py", line 2655, in __init__
+    self.toolbar = self._toolbar2_class(self.canvas)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/zju_earthdata/miniconda3/envs/ece572/lib/python3.12/site-packages/matplotlib/backends/_backend_tk.py", line 624, in __init__
+    self._buttons[text] = button = self._Button(
+                                   ^^^^^^^^^^^^^
+  File "/home/zju_earthdata/miniconda3/envs/ece572/lib/python3.12/site-packages/matplotlib/backends/_backend_tk.py", line 825, in _Button
+    NavigationToolbar2Tk._set_image_for_button(self, b)
+  File "/home/zju_earthdata/miniconda3/envs/ece572/lib/python3.12/site-packages/matplotlib/backends/_backend_tk.py", line 761, in _set_image_for_button
+    image = ImageTk.PhotoImage(im.resize((size, size)), master=self)
+                               ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/zju_earthdata/miniconda3/envs/ece572/lib/python3.12/site-packages/PIL/Image.py", line 2342, in resize
+    im = im.resize(size, resample, box)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/zju_earthdata/miniconda3/envs/ece572/lib/python3.12/site-packages/PIL/Image.py", line 2365, in resize
+    return self._new(self.im.resize(size, resample, box))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: height and width must be > 0
