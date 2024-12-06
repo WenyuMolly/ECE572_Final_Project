@@ -31,6 +31,11 @@ def compute_cam_with_torchcam(cam_extractor, model, img, label, device):
     
     # 使用 torchcam 生成 CAM
     cam = cam_extractor(label, logits)
+    
+    # 提取第一个层的结果
+    if isinstance(cam, list):
+        cam = cam[0]
+        
     cam = cam.squeeze().detach().cpu().numpy()
     cam = (cam - cam.min()) / (cam.max() - cam.min() + 1e-8)  # 归一化
     return cam
