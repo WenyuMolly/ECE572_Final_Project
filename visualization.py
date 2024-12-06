@@ -95,7 +95,7 @@ if __name__ == "__main__":
         model = load_model(model_path, device=device)
 
         # 创建 CAM 提取器（可以切换为 GradCAM, SmoothGradCAMpp 等）
-        cam_extractor = SmoothGradCAMpp(model, target_layer="layer3")
+        cam_extractor = SmoothGradCAMpp(model, target_layer="layer4")
 
         # 可视化每个模型的样本
         for i in range(3):  # 可视化 3 个样本
