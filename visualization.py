@@ -2,14 +2,13 @@ import torch
 import matplotlib.pyplot as plt
 from torchvision.models import resnet18
 from torchvision import transforms, datasets
-from torchcam.methods import SmoothGradCAMpp, GradCAM
+from torchcam.methods import GradCAM, SmoothGradCAMpp
 
 # 加载模型
 def load_model(path, num_classes=10, device='cpu'):
     model = resnet18(pretrained=False, num_classes=num_classes)
     model.load_state_dict(torch.load(path, map_location=device))
     model = model.to(device)
-    print(model)
     model.eval()
     return model
 
@@ -94,8 +93,8 @@ if __name__ == "__main__":
         # 加载模型
         model = load_model(model_path, device=device)
 
-        # 创建 CAM 提取器（可以切换为 GradCAM, SmoothGradCAMpp 等）
-        cam_extractor = SmoothGradCAMpp(model, target_layer="layer4")
+        # **更改目标层为 layer1 或 layer2**
+        cam_extractor = GradCAM(model, target_layer="layer2")
 
         # 可视化每个模型的样本
         for i in range(3):  # 可视化 3 个样本
@@ -105,7 +104,7 @@ if __name__ == "__main__":
             try:
                 # 计算并保存 CAM 可视化
                 cam = compute_cam_with_torchcam(cam_extractor, model, img, label, device)
-                cam_save_path = f"{model_name}_smoothgradcampp_sample_{i+1}.png"
-                visualize_cam(img, cam, title=f"{model_name.upper()} - SmoothGradCAM++ for Sample {i+1}", save_path=cam_save_path)
+                cam_save_path = f"{model_name}_gradcam_sample_{i+1}.png"
+                visualize_cam(img, cam, title=f"{model_name.upper()} - GradCAM for Sample {i+1}", save_path=cam_save_path)
             except Exception as e:
                 print(f"Error processing {model_name}, sample {i+1}: {e}")
