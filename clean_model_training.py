@@ -123,7 +123,7 @@ if __name__ == "__main__":
 
     # 训练模型
     print("Training clean model...")
-    train_losses, test_accuracies = train_model(model, trainloader, testloader, criterion, optimizer, device, epochs=20)
+    train_losses, test_accuracies = train_model(model, trainloader, testloader, criterion, optimizer, device, epochs=30)
 
     # 保存训练过程可视化
     plot_results(train_losses, test_accuracies)
