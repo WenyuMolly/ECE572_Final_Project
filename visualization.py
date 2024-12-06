@@ -40,8 +40,13 @@ def visualize_cam(model, img, label, device, title="CAM Visualization", save_pat
     # 获取全连接层的权重
     weights = model.fc.weight[predicted_class].detach()
 
-    # 检查特征图形状
-    print(f"Features shape: {features.shape}")  # Debug: 检查特征图的形状
+    # 检查特征图和权重的形状
+    print(f"Features shape: {features.shape}")  # Debug: 检查特征图形状
+    print(f"FC weights shape: {weights.shape}")  # Debug: 检查全连接层权重形状
+
+    if features.shape[1] != weights.shape[0]:
+        raise ValueError(f"Feature map channels ({features.shape[1]}) do not match FC weights ({weights.shape[0]}).")
+
     cam = torch.zeros(features.shape[2:], device=device)
 
     # 计算 CAM
