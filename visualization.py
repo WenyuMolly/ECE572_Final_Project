@@ -28,18 +28,17 @@ def compute_cam_with_torchcam(cam_extractor, model, img, label, device):
     
     # 前向传播
     logits = model(img_tensor)
-    
+    print(f"Label: {label}, Model output shape: {logits.shape}")  # 调试信息
+
     # 使用 torchcam 生成 CAM
     cam = cam_extractor(label, logits)
-    
-    # 提取第一个层的结果
-    if isinstance(cam, list):
-        cam = cam[0]
-    
+
     # 检查 CAM 是否为空或形状不正确
-    if cam is None or cam.numel() == 0:
-        raise ValueError(f"Generated CAM is empty or invalid: {cam}")
-    
+    if isinstance(cam, list) and len(cam) > 0:
+        cam = cam[0]
+    elif not isinstance(cam, torch.Tensor) or cam.numel() == 0:
+        raise ValueError(f"Generated CAM is empty or invalid. Label: {label}, Logits: {logits}")
+
     cam = cam.squeeze().detach().cpu().numpy()
     cam = (cam - cam.min()) / (cam.max() - cam.min() + 1e-8)  # 归一化
     return cam
@@ -102,7 +101,10 @@ if __name__ == "__main__":
             img, label = testset[i]
             print(f"Sample {i+1}: Label={label}")
 
-            # 计算并保存 CAM 可视化
-            cam = compute_cam_with_torchcam(cam_extractor, model, img, label, device)
-            cam_save_path = f"{model_name}_smoothgradcampp_sample_{i+1}.png"
-            visualize_cam(img, cam, title=f"{model_name.upper()} - SmoothGradCAM++ for Sample {i+1}", save_path=cam_save_path)
+            try:
+                # 计算并保存 CAM 可视化
+                cam = compute_cam_with_torchcam(cam_extractor, model, img, label, device)
+                cam_save_path = f"{model_name}_smoothgradcampp_sample_{i+1}.png"
+                visualize_cam(img, cam, title=f"{model_name.upper()} - SmoothGradCAM++ for Sample {i+1}", save_path=cam_save_path)
+            except Exception as e:
+                print(f"Error processing {model_name}, sample {i+1}: {e}")
