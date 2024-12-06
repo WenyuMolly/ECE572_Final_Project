@@ -1,8 +1,9 @@
 import torch
+import torch.nn.functional as F
 import matplotlib.pyplot as plt
 from torchvision.models import resnet18
 from torchvision import transforms, datasets
-from torchcam.methods import GradCAM, SmoothGradCAMpp
+from torchcam.methods import GradCAM
 
 # 加载模型
 def load_model(path, num_classes=10, device='cpu'):
@@ -39,26 +40,21 @@ def compute_cam_with_torchcam(cam_extractor, model, img, label, device):
     elif not isinstance(cam, torch.Tensor) or cam.numel() == 0:
         raise ValueError(f"Generated CAM is empty or invalid. Label: {label}, Logits: {logits}")
 
-    cam = cam.squeeze().detach().cpu().numpy()
+    # 上采样到输入图像大小
+    cam = cam.unsqueeze(0).unsqueeze(0)  # 添加批次和通道维度
+    cam = F.interpolate(cam, size=(img.shape[1], img.shape[2]), mode='bilinear', align_corners=False)
+    cam = cam.squeeze().detach().cpu().numpy()  # 去掉多余维度并转换为 NumPy 格式
     cam = (cam - cam.min()) / (cam.max() - cam.min() + 1e-8)  # 归一化
     return cam
 
 # 可视化函数
 def visualize_cam(img, cam, title="CAM Visualization", save_path=None):
     print(f"Image shape before visualization: {img.shape}")  # 调试信息
-    print(f"CAM shape before visualization: {cam.shape}")  # 调试信息
+    print(f"Resized CAM shape: {cam.shape}")  # 调试信息
 
     # 将张量格式转换为 NumPy 格式
     img_np = img.permute(1, 2, 0).cpu().numpy() * 0.5 + 0.5  # [H, W, C]
     cam_np = cam  # CAM 应为 [H, W] 格式
-
-    # 检查 CAM 的形状
-    if cam_np.ndim != 2:
-        raise ValueError(f"Expected 2D CAM, but got shape: {cam_np.shape}")
-    
-    # 确保图像和 CAM 的维度匹配
-    if cam_np.shape != img_np.shape[:2]:
-        raise ValueError(f"CAM shape {cam_np.shape} does not match image shape {img_np.shape[:2]}")
 
     # 可视化
     plt.imshow(img_np)  # 原始图像
@@ -93,7 +89,7 @@ if __name__ == "__main__":
         # 加载模型
         model = load_model(model_path, device=device)
 
-        # **更改目标层为 layer1 或 layer2**
+        # **更改目标层为 layer2**
         cam_extractor = GradCAM(model, target_layer="layer2")
 
         # 可视化每个模型的样本
