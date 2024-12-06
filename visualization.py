@@ -35,15 +35,31 @@ def compute_cam_with_torchcam(cam_extractor, model, img, label, device):
     # 提取第一个层的结果
     if isinstance(cam, list):
         cam = cam[0]
-        
+    
+    # 检查 CAM 是否为空或形状不正确
+    if cam is None or cam.numel() == 0:
+        raise ValueError(f"Generated CAM is empty or invalid: {cam}")
+    
     cam = cam.squeeze().detach().cpu().numpy()
     cam = (cam - cam.min()) / (cam.max() - cam.min() + 1e-8)  # 归一化
     return cam
 
 # 可视化函数
 def visualize_cam(img, cam, title="CAM Visualization", save_path=None):
+    print(f"Image shape before visualization: {img.shape}")  # 调试信息
+    print(f"CAM shape before visualization: {cam.shape}")  # 调试信息
+
+    # 将张量格式转换为 NumPy 格式
     img_np = img.permute(1, 2, 0).cpu().numpy() * 0.5 + 0.5  # [H, W, C]
     cam_np = cam  # CAM 应为 [H, W] 格式
+
+    # 检查 CAM 的形状
+    if cam_np.ndim != 2:
+        raise ValueError(f"Expected 2D CAM, but got shape: {cam_np.shape}")
+    
+    # 确保图像和 CAM 的维度匹配
+    if cam_np.shape != img_np.shape[:2]:
+        raise ValueError(f"CAM shape {cam_np.shape} does not match image shape {img_np.shape[:2]}")
 
     # 可视化
     plt.imshow(img_np)  # 原始图像
