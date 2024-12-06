@@ -2,13 +2,13 @@ import torch
 import matplotlib.pyplot as plt
 from torchvision.models import resnet18
 from torchvision import transforms, datasets
-from torchcam.methods import GradCAM
+import numpy as np
 
 # 加载模型
 def load_model(path, num_classes=10, device='cpu'):
     model = resnet18(pretrained=False, num_classes=num_classes)
-    model.load_state_dict(torch.load(path, map_location=device))  # 确保权重加载到目标设备
-    model = model.to(device)  # 转移模型到设备
+    model.load_state_dict(torch.load(path, map_location=device))
+    model = model.to(device)
     model.eval()
     return model
 
@@ -21,11 +21,12 @@ def load_cifar10():
     testset = datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
     return testset
 
-# CAM 可视化
-def visualize_cam(model, img, label, device, title="CAM Visualization", save_path=None):
+# 计算 CAM
+def compute_cam(model, img, label, device):
     model.eval()
     features = None
 
+    # 注册 hook 到最后的卷积层
     def hook_fn(module, input, output):
         nonlocal features
         features = output
@@ -33,68 +34,81 @@ def visualize_cam(model, img, label, device, title="CAM Visualization", save_pat
     target_layer = model.layer4
     hook = target_layer.register_forward_hook(hook_fn)
 
+    # 前向传播获取 logits
     img_tensor = img.unsqueeze(0).to(device)
     logits = model(img_tensor)
-    _, predicted_class = logits.max(1)
 
     # 获取全连接层的权重
-    weights = model.fc.weight[predicted_class].detach()
-
-    # 检查特征图和权重的形状
-    print(f"Features shape: {features.shape}")  # Debug: 检查特征图形状
-    print(f"FC weights shape: {weights.shape}")  # Debug: 检查全连接层权重形状
-
-    if features.shape[1] != weights.shape[0]:
-        raise ValueError(f"Feature map channels ({features.shape[1]}) do not match FC weights ({weights.shape[0]}).")
-
-    cam = torch.zeros(features.shape[2:], device=device)
+    weights = model.fc.weight[label].detach()
 
     # 计算 CAM
-    for i in range(features.shape[1]):  # 遍历通道
+    cam = torch.zeros(features.shape[2:], device=device)
+    for i in range(features.shape[1]):
         cam += weights[i] * features[0, i, :, :]
 
     cam = cam.cpu().numpy()
     cam = (cam - cam.min()) / (cam.max() - cam.min())  # 归一化到 [0, 1]
 
-    # 可视化或保存图片
-    plt.imshow(img.permute(1, 2, 0).cpu().numpy() * 0.5 + 0.5)
-    plt.imshow(cam, cmap='jet', alpha=0.5)
+    hook.remove()
+    return cam
+
+# 可视化 CAM
+def visualize_cam(img, cam, title="CAM Visualization", save_path=None):
+    plt.imshow(img.permute(1, 2, 0).cpu().numpy() * 0.5 + 0.5)  # 原始图像
+    plt.imshow(cam, cmap='jet', alpha=0.5)  # CAM 图叠加
     plt.title(title)
     plt.colorbar()
     if save_path:
         plt.savefig(save_path, dpi=300, bbox_inches="tight")
         print(f"Saved CAM visualization to {save_path}")
+        plt.close()
     else:
         plt.show()
 
-    hook.remove()
-
-# GradCAM 可视化
-def visualize_gradcam(model, img, label, device, title="GradCAM Visualization", save_path=None):
-    gradcam = GradCAM(model, target_layer="layer4")
+# Grad-CAM 可视化
+def compute_gradcam(model, img, label, device):
     model.eval()
+    features = None
+    gradients = None
 
+    # 注册 hook 到目标层
+    def forward_hook(module, input, output):
+        nonlocal features
+        features = output
+
+    def backward_hook(module, grad_in, grad_out):
+        nonlocal gradients
+        gradients = grad_out[0]
+
+    target_layer = model.layer4
+    forward_handle = target_layer.register_forward_hook(forward_hook)
+    backward_handle = target_layer.register_backward_hook(backward_hook)
+
+    # 前向传播
     img_tensor = img.unsqueeze(0).to(device)
-    logits = model(img_tensor)
-    cam = gradcam(label, logits)
+    output = model(img_tensor)
 
-    cam = cam.squeeze().cpu().numpy()
-    cam = (cam - cam.min()) / (cam.max() - cam.min())  # 归一化到 [0, 1]
+    # 计算梯度
+    model.zero_grad()
+    target_score = output[0, label]
+    target_score.backward()
 
-    # 可视化或保存图片
-    plt.imshow(img.permute(1, 2, 0).cpu().numpy() * 0.5 + 0.5)
-    plt.imshow(cam, cmap='jet', alpha=0.5)
-    plt.title(title)
-    plt.colorbar()
-    if save_path:
-        plt.savefig(save_path, dpi=300, bbox_inches="tight")
-        print(f"Saved GradCAM visualization to {save_path}")
-    else:
-        plt.show()
+    # 计算 Grad-CAM
+    weights = gradients.mean(dim=(2, 3), keepdim=True)
+    cam = (weights * features).sum(dim=1, keepdim=True)
+    cam = torch.relu(cam).squeeze().cpu().numpy()
+    cam = (cam - cam.min()) / (cam.max() - cam.min())  # 归一化
+
+    forward_handle.remove()
+    backward_handle.remove()
+
+    return cam
 
 if __name__ == "__main__":
-    # 加载数据集
+    # 设置设备
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+    # 加载数据集
     testset = load_cifar10()
 
     # 模型文件路径
@@ -116,10 +130,12 @@ if __name__ == "__main__":
             img, label = testset[i]
             print(f"Sample {i+1}: Label={label}")
 
-            # 保存 CAM 可视化
+            # 计算并保存 CAM 可视化
+            cam = compute_cam(model, img, label, device)
             cam_save_path = f"{model_name}_cam_sample_{i+1}.png"
-            visualize_cam(model, img, label, device, title=f"{model_name.upper()} - CAM for Sample {i+1}", save_path=cam_save_path)
+            visualize_cam(img, cam, title=f"{model_name.upper()} - CAM for Sample {i+1}", save_path=cam_save_path)
 
-            # 保存 GradCAM 可视化
+            # 计算并保存 Grad-CAM 可视化
+            gradcam = compute_gradcam(model, img, label, device)
             gradcam_save_path = f"{model_name}_gradcam_sample_{i+1}.png"
-            visualize_gradcam(model, img, label, device, title=f"{model_name.upper()} - GradCAM for Sample {i+1}", save_path=gradcam_save_path)
+            visualize_cam(img, gradcam, title=f"{model_name.upper()} - GradCAM for Sample {i+1}", save_path=gradcam_save_path)
