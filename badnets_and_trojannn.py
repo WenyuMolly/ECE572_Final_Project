@@ -167,14 +167,14 @@ if __name__ == "__main__":
     # 创建 BadNets 数据集
     print("Creating BadNets static backdoored dataset...")
     target_label = 0
-    badnets_dataset = create_backdoored_dataset(trainloader.dataset, target_label, trigger_ratio=0.2, dynamic=False)
+    badnets_dataset = create_backdoored_dataset(trainloader.dataset, target_label, trigger_ratio=0.5, dynamic=False)
     badnets_loader = torch.utils.data.DataLoader(badnets_dataset, batch_size=64, shuffle=True)
 
     # 训练 BadNets 模型
     badnets_model = resnet18(pretrained=False, num_classes=10)
     optimizer = optim.SGD(badnets_model.parameters(), lr=0.01, momentum=0.9)
     print("Training BadNets static model...")
-    badnets_model = train_model(badnets_model, badnets_loader, testloader, criterion, optimizer, device, epochs=10, model_name="BadNets")
+    badnets_model = train_model(badnets_model, badnets_loader, testloader, criterion, optimizer, device, epochs=20, model_name="BadNets")
 
     # 保存 BadNets 模型
     print("Saving BadNets model...")
@@ -193,14 +193,14 @@ if __name__ == "__main__":
 
     # 创建 TrojanNN 数据集
     print("Creating TrojanNN dynamic backdoored dataset...")
-    trojannn_dataset = create_backdoored_dataset(trainloader.dataset, target_label, trigger_ratio=0.2, dynamic=True)
+    trojannn_dataset = create_backdoored_dataset(trainloader.dataset, target_label, trigger_ratio=0.5, dynamic=True)
     trojannn_loader = torch.utils.data.DataLoader(trojannn_dataset, batch_size=64, shuffle=True)
 
     # 训练 TrojanNN 模型
     trojannn_model = resnet18(pretrained=False, num_classes=10)
     trojannn_optimizer = optim.SGD(trojannn_model.parameters(), lr=0.01, momentum=0.9)
     print("Training TrojanNN model...")
-    trojannn_model = train_model(trojannn_model, trojannn_loader, testloader, criterion, trojannn_optimizer, device, epochs=10, model_name="TrojanNN")
+    trojannn_model = train_model(trojannn_model, trojannn_loader, testloader, criterion, trojannn_optimizer, device, epochs=20, model_name="TrojanNN")
 
     # 保存 TrojanNN 模型
     print("Saving TrojanNN model...")

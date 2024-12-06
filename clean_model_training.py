@@ -103,6 +103,14 @@ def plot_confusion_matrix(model, dataloader, classes, device):
     print("Saved confusion matrix to 'confusion_matrix.png'")
     plt.close()
 
+# 保存评估结果到文件
+def save_metrics_to_file(model_name, test_accuracies, filename="results_clean_model.txt"):
+    with open(filename, "a") as file:
+        file.write(f"{model_name}:\n")
+        file.write(f"  - Final Test Accuracy: {test_accuracies[-1]:.2f}%\n")
+        file.write(f"  - Test Accuracies by Epoch: {test_accuracies}\n\n")
+    print(f"Saved {model_name} metrics to {filename}")
+
 if __name__ == "__main__":
     # 数据加载
     trainloader, testloader, classes = load_cifar10(batch_size=64)
@@ -115,7 +123,7 @@ if __name__ == "__main__":
 
     # 训练模型
     print("Training clean model...")
-    train_losses, test_accuracies = train_model(model, trainloader, testloader, criterion, optimizer, device, epochs=10)
+    train_losses, test_accuracies = train_model(model, trainloader, testloader, criterion, optimizer, device, epochs=20)
 
     # 保存训练过程可视化
     plot_results(train_losses, test_accuracies)
@@ -123,6 +131,9 @@ if __name__ == "__main__":
     # 混淆矩阵可视化
     print("Evaluating clean model on test set...")
     plot_confusion_matrix(model, testloader, classes, device)
+
+    # 保存评估结果到文件
+    save_metrics_to_file("Clean Model", test_accuracies)
 
     # 保存模型
     torch.save(model.state_dict(), "clean_model.pth")
