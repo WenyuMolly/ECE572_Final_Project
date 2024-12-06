@@ -1,0 +1,16 @@
+BadNets:
+  - Test Accuracy: 12.07%
+  - Trigger Test Accuracy: 55.35%
+
+TrojanNN:
+  - Test Accuracy: 15.24%
+  - Trigger Test Accuracy: 53.71%
+
+BadNets:
+  - Test Accuracy: 14.13%
+  - Trigger Test Accuracy: 37.15%
+
+TrojanNN:
+  - Test Accuracy: 21.38%
+  - Trigger Test Accuracy: 36.49%
+
