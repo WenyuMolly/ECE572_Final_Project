@@ -41,9 +41,10 @@ def compute_cam_with_torchcam(cam_extractor, model, img, label, device):
         raise ValueError(f"Generated CAM is empty or invalid. Label: {label}, Logits: {logits}")
 
     # 上采样到输入图像大小
-    cam = cam.unsqueeze(0).unsqueeze(0)  # 添加批次和通道维度
+    cam = cam.unsqueeze(0).unsqueeze(0)  # 添加批次和通道维度 -> [N=1, C=1, H=4, W=4]
     cam = F.interpolate(cam, size=(img.shape[1], img.shape[2]), mode='bilinear', align_corners=False)
-    cam = cam.squeeze().detach().cpu().numpy()  # 去掉多余维度并转换为 NumPy 格式
+    cam = cam.squeeze(0).squeeze(0)  # 移除批次和通道维度 -> [H=32, W=32]
+    cam = cam.detach().cpu().numpy()  # 转换为 NumPy 格式
     cam = (cam - cam.min()) / (cam.max() - cam.min() + 1e-8)  # 归一化
     return cam
 
