@@ -51,6 +51,8 @@ def compute_cam_with_torchcam(cam_extractor, model, img, label, device):
     cam = cam.squeeze(0).squeeze(0)  # 移除批次和通道维度
     cam = cam.detach().cpu().numpy()  # 转换为 NumPy 格式
     cam = (cam - cam.min()) / (cam.max() - cam.min() + 1e-8)  # 归一化
+    if torch.isnan(torch.tensor(cam)).any() or torch.isinf(torch.tensor(cam)).any():
+        raise ValueError("CAM contains NaN or Inf values.")
     return cam
 
 # 可视化函数
@@ -59,6 +61,12 @@ def visualize_cam(img, cam, gradcam, title_prefix, save_dir):
     img_np = img.permute(1, 2, 0).cpu().numpy() * 0.5 + 0.5  # [H, W, C]
     cam_np = cam  # CAM 应为 [H, W] 格式
     gradcam_np = gradcam  # GradCAM 应为 [H, W] 格式
+
+    # 打印调试信息
+    print(f"Image shape: {img_np.shape}, CAM shape: {cam_np.shape}, GradCAM shape: {gradcam_np.shape}")
+    print(f"Image min/max: {img_np.min()}, {img_np.max()}")
+    print(f"CAM min/max: {cam_np.min()}, {cam_np.max()}")
+    print(f"GradCAM min/max: {gradcam_np.min()}, {gradcam_np.max()}")
 
     # 保存 GradCAM 图像
     plt.imshow(img_np)  # 原始图像
@@ -126,7 +134,7 @@ if __name__ == "__main__":
             try:
                 # 计算 CAM 和 GradCAM
                 cam = compute_cam_with_torchcam(cam_extractor, model, img, label, device)
-                gradcam = compute_cam_with_torchcam(cam_extractor, model, img, label, device)  # GradCAM 使用相同函数生成
+                gradcam = cam  # 使用相同计算替代
 
                 # 保存可视化结果
                 save_dir = f"{model_name}_sample_{i+1}"
