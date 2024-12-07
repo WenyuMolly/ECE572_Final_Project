@@ -22,6 +22,17 @@ def load_cifar10():
     testset = datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
     return testset
 
+# 保存原图和分类结果
+def save_original_image(img, label, predicted_label, class_names, save_path):
+    # 将张量格式转换为 NumPy 格式
+    img_np = img.permute(1, 2, 0).cpu().numpy() * 0.5 + 0.5  # [H, W, C]
+    plt.imshow(img_np)
+    plt.title(f"True: {class_names[label]}, Predicted: {class_names[predicted_label]}")
+    plt.axis('off')
+    plt.savefig(save_path, dpi=300, bbox_inches="tight")
+    plt.close()
+    print(f"Saved original image with classification to {save_path}")
+
 # 使用 torchcam 计算 CAM
 def compute_cam_with_torchcam(cam_extractor, model, img, label, device):
     model.eval()
@@ -29,7 +40,8 @@ def compute_cam_with_torchcam(cam_extractor, model, img, label, device):
     
     # 前向传播
     logits = model(img_tensor)
-    print(f"Label: {label}, Model output shape: {logits.shape}")  # 调试信息
+    predicted_label = logits.argmax(dim=1).item()
+    print(f"Label: {label}, Predicted: {predicted_label}, Model output shape: {logits.shape}")  # 调试信息
 
     # 使用 torchcam 生成 CAM
     cam = cam_extractor(label, logits)
@@ -51,9 +63,7 @@ def compute_cam_with_torchcam(cam_extractor, model, img, label, device):
     cam = cam.squeeze(0).squeeze(0)  # 移除批次和通道维度
     cam = cam.detach().cpu().numpy()  # 转换为 NumPy 格式
     cam = (cam - cam.min()) / (cam.max() - cam.min() + 1e-8)  # 归一化
-    if torch.isnan(torch.tensor(cam)).any() or torch.isinf(torch.tensor(cam)).any():
-        raise ValueError("CAM contains NaN or Inf values.")
-    return cam
+    return cam, predicted_label
 
 # 可视化函数
 def visualize_cam(img, cam, gradcam, title_prefix, save_dir):
@@ -61,12 +71,6 @@ def visualize_cam(img, cam, gradcam, title_prefix, save_dir):
     img_np = img.permute(1, 2, 0).cpu().numpy() * 0.5 + 0.5  # [H, W, C]
     cam_np = cam  # CAM 应为 [H, W] 格式
     gradcam_np = gradcam  # GradCAM 应为 [H, W] 格式
-
-    # 打印调试信息
-    print(f"Image shape: {img_np.shape}, CAM shape: {cam_np.shape}, GradCAM shape: {gradcam_np.shape}")
-    print(f"Image min/max: {img_np.min()}, {img_np.max()}")
-    print(f"CAM min/max: {cam_np.min()}, {cam_np.max()}")
-    print(f"GradCAM min/max: {gradcam_np.min()}, {gradcam_np.max()}")
 
     # 保存 GradCAM 图像
     plt.imshow(img_np)  # 原始图像
@@ -108,6 +112,7 @@ if __name__ == "__main__":
 
     # 加载数据集
     testset = load_cifar10()
+    class_names = testset.classes
 
     # 模型文件路径
     models = {
@@ -132,11 +137,12 @@ if __name__ == "__main__":
             print(f"Sample {i+1}: Label={label}")
 
             try:
-                # 计算 CAM 和 GradCAM
-                cam = compute_cam_with_torchcam(cam_extractor, model, img, label, device)
-                gradcam = cam  # 使用相同计算替代
+                # 保存原图和分类结果
+                cam, predicted_label = compute_cam_with_torchcam(cam_extractor, model, img, label, device)
+                save_original_image(img, label, predicted_label, class_names, save_path=f"{model_name}_sample_{i+1}_original.png")
 
                 # 保存可视化结果
+                gradcam = cam  # 使用相同计算替代
                 save_dir = f"{model_name}_sample_{i+1}"
                 visualize_cam(img, cam, gradcam, title_prefix=model_name.upper(), save_dir=save_dir)
             except Exception as e:
