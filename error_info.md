@@ -9,57 +9,39 @@ Processing clean_model...
   model.load_state_dict(torch.load(path, map_location=device))
 Sample 1: Label=3
 Label: 3, Model output shape: torch.Size([1, 10])
-Original CAM shape: torch.Size([1, 4, 4])
-Resized CAM shape: (32, 32)
-Image shape before visualization: torch.Size([3, 32, 32])
+Label: 3, Model output shape: torch.Size([1, 10])
 Error processing clean_model, sample 1: height and width must be > 0
 Sample 2: Label=8
 Label: 8, Model output shape: torch.Size([1, 10])
-Original CAM shape: torch.Size([1, 4, 4])
-Resized CAM shape: (32, 32)
-Image shape before visualization: torch.Size([3, 32, 32])
+Label: 8, Model output shape: torch.Size([1, 10])
 Error processing clean_model, sample 2: height and width must be > 0
 Sample 3: Label=8
 Label: 8, Model output shape: torch.Size([1, 10])
-Original CAM shape: torch.Size([1, 4, 4])
-Resized CAM shape: (32, 32)
-Image shape before visualization: torch.Size([3, 32, 32])
+Label: 8, Model output shape: torch.Size([1, 10])
 Error processing clean_model, sample 3: height and width must be > 0
 Processing badnets_model...
 Sample 1: Label=3
 Label: 3, Model output shape: torch.Size([1, 10])
-Original CAM shape: torch.Size([1, 4, 4])
-Resized CAM shape: (32, 32)
-Image shape before visualization: torch.Size([3, 32, 32])
+Label: 3, Model output shape: torch.Size([1, 10])
 Error processing badnets_model, sample 1: height and width must be > 0
 Sample 2: Label=8
 Label: 8, Model output shape: torch.Size([1, 10])
-Original CAM shape: torch.Size([1, 4, 4])
-Resized CAM shape: (32, 32)
-Image shape before visualization: torch.Size([3, 32, 32])
+Label: 8, Model output shape: torch.Size([1, 10])
 Error processing badnets_model, sample 2: height and width must be > 0
 Sample 3: Label=8
 Label: 8, Model output shape: torch.Size([1, 10])
-Original CAM shape: torch.Size([1, 4, 4])
-Resized CAM shape: (32, 32)
-Image shape before visualization: torch.Size([3, 32, 32])
+Label: 8, Model output shape: torch.Size([1, 10])
 Error processing badnets_model, sample 3: height and width must be > 0
 Processing trojannn_model...
 Sample 1: Label=3
 Label: 3, Model output shape: torch.Size([1, 10])
-Original CAM shape: torch.Size([1, 4, 4])
-Resized CAM shape: (32, 32)
-Image shape before visualization: torch.Size([3, 32, 32])
+Label: 3, Model output shape: torch.Size([1, 10])
 Error processing trojannn_model, sample 1: height and width must be > 0
 Sample 2: Label=8
 Label: 8, Model output shape: torch.Size([1, 10])
-Original CAM shape: torch.Size([1, 4, 4])
-Resized CAM shape: (32, 32)
-Image shape before visualization: torch.Size([3, 32, 32])
+Label: 8, Model output shape: torch.Size([1, 10])
 Error processing trojannn_model, sample 2: height and width must be > 0
 Sample 3: Label=8
 Label: 8, Model output shape: torch.Size([1, 10])
-Original CAM shape: torch.Size([1, 4, 4])
-Resized CAM shape: (32, 32)
-Image shape before visualization: torch.Size([3, 32, 32])
+Label: 8, Model output shape: torch.Size([1, 10])
 Error processing trojannn_model, sample 3: height and width must be > 0
