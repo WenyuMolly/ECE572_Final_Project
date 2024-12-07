@@ -129,7 +129,7 @@ if __name__ == "__main__":
         model = load_model(model_path, device=device)
 
         # **更改目标层为 layer2**
-        cam_extractor = GradCAM(model, target_layer="layer2")
+        cam_extractor = GradCAM(model, target_layer="layer4")
 
         # 可视化每个模型的样本
         for i in range(3):  # 可视化 3 个样本
