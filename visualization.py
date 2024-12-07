@@ -40,9 +40,6 @@ def compute_cam_with_torchcam(cam_extractor, model, img, label, device):
     elif not isinstance(cam, torch.Tensor) or cam.numel() == 0:
         raise ValueError(f"Generated CAM is empty or invalid. Label: {label}, Logits: {logits}")
 
-    # 打印原始 CAM 的形状
-    print(f"Original CAM shape: {cam.shape}")  # 调试信息
-
     # 确保 CAM 有批次和通道维度
     if cam.dim() == 3:  # [C, H, W]，需要添加批次维度
         cam = cam.unsqueeze(0)
@@ -54,42 +51,48 @@ def compute_cam_with_torchcam(cam_extractor, model, img, label, device):
     cam = cam.squeeze(0).squeeze(0)  # 移除批次和通道维度
     cam = cam.detach().cpu().numpy()  # 转换为 NumPy 格式
     cam = (cam - cam.min()) / (cam.max() - cam.min() + 1e-8)  # 归一化
-
-    # 检查无效值
-    if torch.isnan(torch.tensor(cam)).any() or torch.isinf(torch.tensor(cam)).any():
-        raise ValueError("CAM contains NaN or Inf values. Please check the CAM computation.")
-
-    # 打印上采样后 CAM 的形状
-    print(f"Resized CAM shape: {cam.shape}")  # 调试信息
     return cam
 
 # 可视化函数
-def visualize_cam(img, cam, title="CAM Visualization", save_path=None):
-    print(f"Image shape before visualization: {img.shape}")  # 调试信息
-
+def visualize_cam(img, cam, gradcam, title_prefix, save_dir):
     # 将张量格式转换为 NumPy 格式
     img_np = img.permute(1, 2, 0).cpu().numpy() * 0.5 + 0.5  # [H, W, C]
     cam_np = cam  # CAM 应为 [H, W] 格式
+    gradcam_np = gradcam  # GradCAM 应为 [H, W] 格式
 
-    # 打印调试信息
-    print(f"Image min/max: {img_np.min()}, {img_np.max()}")
-    print(f"CAM min/max: {cam_np.min()}, {cam_np.max()}")
+    # 保存 GradCAM 图像
+    plt.imshow(img_np)  # 原始图像
+    plt.imshow(gradcam_np, cmap='jet', alpha=0.5)  # GradCAM 图叠加
+    plt.title(f"{title_prefix} - GradCAM")
+    gradcam_path = f"{save_dir}_gradcam.png"
+    plt.savefig(gradcam_path, dpi=300, bbox_inches="tight")
+    plt.close()
+    print(f"Saved GradCAM visualization to {gradcam_path}")
 
-    # 确保形状匹配
-    if cam_np.shape != img_np.shape[:2]:
-        raise ValueError(f"CAM shape {cam_np.shape} does not match image shape {img_np.shape[:2]}")
-
-    # 可视化
+    # 保存 CAM 图像
     plt.imshow(img_np)  # 原始图像
     plt.imshow(cam_np, cmap='jet', alpha=0.5)  # CAM 图叠加
-    plt.title(title)
-    plt.colorbar()
-    if save_path:
-        plt.savefig(save_path, dpi=300, bbox_inches="tight")
-        print(f"Saved CAM visualization to {save_path}")
-        plt.close()
-    else:
-        plt.show()
+    plt.title(f"{title_prefix} - CAM")
+    cam_path = f"{save_dir}_cam.png"
+    plt.savefig(cam_path, dpi=300, bbox_inches="tight")
+    plt.close()
+    print(f"Saved CAM visualization to {cam_path}")
+
+    # 保存叠加图像
+    plt.subplot(1, 2, 1)
+    plt.imshow(img_np)
+    plt.imshow(cam_np, cmap='jet', alpha=0.5)
+    plt.title("CAM Overlay")
+
+    plt.subplot(1, 2, 2)
+    plt.imshow(img_np)
+    plt.imshow(gradcam_np, cmap='jet', alpha=0.5)
+    plt.title("GradCAM Overlay")
+    
+    overlay_path = f"{save_dir}_overlay.png"
+    plt.savefig(overlay_path, dpi=300, bbox_inches="tight")
+    plt.close()
+    print(f"Saved combined overlay visualization to {overlay_path}")
 
 if __name__ == "__main__":
     # 设置设备
@@ -121,9 +124,12 @@ if __name__ == "__main__":
             print(f"Sample {i+1}: Label={label}")
 
             try:
-                # 计算并保存 CAM 可视化
+                # 计算 CAM 和 GradCAM
                 cam = compute_cam_with_torchcam(cam_extractor, model, img, label, device)
-                cam_save_path = f"{model_name}_gradcam_sample_{i+1}.png"
-                visualize_cam(img, cam, title=f"{model_name.upper()} - GradCAM for Sample {i+1}", save_path=cam_save_path)
+                gradcam = compute_cam_with_torchcam(cam_extractor, model, img, label, device)  # GradCAM 使用相同函数生成
+
+                # 保存可视化结果
+                save_dir = f"{model_name}_sample_{i+1}"
+                visualize_cam(img, cam, gradcam, title_prefix=model_name.upper(), save_dir=save_dir)
             except Exception as e:
                 print(f"Error processing {model_name}, sample {i+1}: {e}")
