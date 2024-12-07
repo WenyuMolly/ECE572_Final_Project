@@ -1,3 +1,4 @@
+(ece572) zju_earthdata@ZJU-EarthData:~/code_repo/ECE572_Final_Project$ python visualization.py 
 Files already downloaded and verified
 Processing clean_model...
 /home/zju_earthdata/miniconda3/envs/ece572/lib/python3.12/site-packages/torchvision/models/_utils.py:208: UserWarning: The parameter 'pretrained' is deprecated since 0.13 and may be removed in the future, please use 'weights' instead.
@@ -9,38 +10,56 @@ Processing clean_model...
 Sample 1: Label=3
 Label: 3, Model output shape: torch.Size([1, 10])
 Original CAM shape: torch.Size([1, 4, 4])
-Error processing clean_model, sample 1: Input and output must have the same number of spatial dimensions, but got input with spatial dimensions of [1, 4, 4] and output size of (32, 32). Please provide input tensor in (N, C, d1, d2, ...,dK) format and output size in (o1, o2, ...,oK) format.
+Resized CAM shape: (32, 32)
+Image shape before visualization: torch.Size([3, 32, 32])
+Error processing clean_model, sample 1: height and width must be > 0
 Sample 2: Label=8
 Label: 8, Model output shape: torch.Size([1, 10])
 Original CAM shape: torch.Size([1, 4, 4])
-Error processing clean_model, sample 2: Input and output must have the same number of spatial dimensions, but got input with spatial dimensions of [1, 4, 4] and output size of (32, 32). Please provide input tensor in (N, C, d1, d2, ...,dK) format and output size in (o1, o2, ...,oK) format.
+Resized CAM shape: (32, 32)
+Image shape before visualization: torch.Size([3, 32, 32])
+Error processing clean_model, sample 2: height and width must be > 0
 Sample 3: Label=8
 Label: 8, Model output shape: torch.Size([1, 10])
 Original CAM shape: torch.Size([1, 4, 4])
-Error processing clean_model, sample 3: Input and output must have the same number of spatial dimensions, but got input with spatial dimensions of [1, 4, 4] and output size of (32, 32). Please provide input tensor in (N, C, d1, d2, ...,dK) format and output size in (o1, o2, ...,oK) format.
+Resized CAM shape: (32, 32)
+Image shape before visualization: torch.Size([3, 32, 32])
+Error processing clean_model, sample 3: height and width must be > 0
 Processing badnets_model...
 Sample 1: Label=3
 Label: 3, Model output shape: torch.Size([1, 10])
 Original CAM shape: torch.Size([1, 4, 4])
-Error processing badnets_model, sample 1: Input and output must have the same number of spatial dimensions, but got input with spatial dimensions of [1, 4, 4] and output size of (32, 32). Please provide input tensor in (N, C, d1, d2, ...,dK) format and output size in (o1, o2, ...,oK) format.
+Resized CAM shape: (32, 32)
+Image shape before visualization: torch.Size([3, 32, 32])
+Error processing badnets_model, sample 1: height and width must be > 0
 Sample 2: Label=8
 Label: 8, Model output shape: torch.Size([1, 10])
 Original CAM shape: torch.Size([1, 4, 4])
-Error processing badnets_model, sample 2: Input and output must have the same number of spatial dimensions, but got input with spatial dimensions of [1, 4, 4] and output size of (32, 32). Please provide input tensor in (N, C, d1, d2, ...,dK) format and output size in (o1, o2, ...,oK) format.
+Resized CAM shape: (32, 32)
+Image shape before visualization: torch.Size([3, 32, 32])
+Error processing badnets_model, sample 2: height and width must be > 0
 Sample 3: Label=8
 Label: 8, Model output shape: torch.Size([1, 10])
 Original CAM shape: torch.Size([1, 4, 4])
-Error processing badnets_model, sample 3: Input and output must have the same number of spatial dimensions, but got input with spatial dimensions of [1, 4, 4] and output size of (32, 32). Please provide input tensor in (N, C, d1, d2, ...,dK) format and output size in (o1, o2, ...,oK) format.
+Resized CAM shape: (32, 32)
+Image shape before visualization: torch.Size([3, 32, 32])
+Error processing badnets_model, sample 3: height and width must be > 0
 Processing trojannn_model...
 Sample 1: Label=3
 Label: 3, Model output shape: torch.Size([1, 10])
 Original CAM shape: torch.Size([1, 4, 4])
-Error processing trojannn_model, sample 1: Input and output must have the same number of spatial dimensions, but got input with spatial dimensions of [1, 4, 4] and output size of (32, 32). Please provide input tensor in (N, C, d1, d2, ...,dK) format and output size in (o1, o2, ...,oK) format.
+Resized CAM shape: (32, 32)
+Image shape before visualization: torch.Size([3, 32, 32])
+Error processing trojannn_model, sample 1: height and width must be > 0
 Sample 2: Label=8
 Label: 8, Model output shape: torch.Size([1, 10])
 Original CAM shape: torch.Size([1, 4, 4])
-Error processing trojannn_model, sample 2: Input and output must have the same number of spatial dimensions, but got input with spatial dimensions of [1, 4, 4] and output size of (32, 32). Please provide input tensor in (N, C, d1, d2, ...,dK) format and output size in (o1, o2, ...,oK) format.
+Resized CAM shape: (32, 32)
+Image shape before visualization: torch.Size([3, 32, 32])
+Error processing trojannn_model, sample 2: height and width must be > 0
 Sample 3: Label=8
 Label: 8, Model output shape: torch.Size([1, 10])
 Original CAM shape: torch.Size([1, 4, 4])
-Error processing trojannn_model, sample 3: Input and output must have the same number of spatial dimensions, but got input with spatial dimensions of [1, 4, 4] and output size of (32, 32). Please provide input tensor in (N, C, d1, d2, ...,dK) format and output size in (o1, o2, ...,oK) format.
+Resized CAM shape: (32, 32)
+Image shape before visualization: torch.Size([3, 32, 32])
+Error processing trojannn_model, sample 3: height and width must be > 0
