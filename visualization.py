@@ -25,7 +25,7 @@ def load_cifar10():
 # 使用 torchcam 计算 CAM
 def compute_cam_with_torchcam(cam_extractor, model, img, label, device):
     model.eval()
-    img_tensor = img.unsqueeze(0).to(device)
+    img_tensor = img.unsqueeze(0).to(device)  # 添加批次维度
     
     # 前向传播
     logits = model(img_tensor)
@@ -43,10 +43,15 @@ def compute_cam_with_torchcam(cam_extractor, model, img, label, device):
     # 打印原始 CAM 的形状
     print(f"Original CAM shape: {cam.shape}")  # 调试信息
 
+    # 确保 CAM 有批次和通道维度
+    if cam.dim() == 3:  # [C, H, W]，需要添加批次维度
+        cam = cam.unsqueeze(0)
+    if cam.dim() == 2:  # [H, W]，需要添加批次和通道维度
+        cam = cam.unsqueeze(0).unsqueeze(0)
+    
     # 上采样到输入图像大小
-    cam = cam.unsqueeze(0).unsqueeze(0)  # 添加批次和通道维度 -> [N=1, C=1, H=4, W=4]
     cam = F.interpolate(cam, size=(img.shape[1], img.shape[2]), mode='bilinear', align_corners=False)
-    cam = cam.squeeze(0).squeeze(0)  # 移除批次和通道维度 -> [H=32, W=32]
+    cam = cam.squeeze(0).squeeze(0)  # 移除批次和通道维度
     cam = cam.detach().cpu().numpy()  # 转换为 NumPy 格式
     cam = (cam - cam.min()) / (cam.max() - cam.min() + 1e-8)  # 归一化
 
