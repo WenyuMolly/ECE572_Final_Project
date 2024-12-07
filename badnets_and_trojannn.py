@@ -156,7 +156,7 @@ if __name__ == "__main__":
 
     print("Creating BadNets static backdoored dataset...")
     target_label = 0
-    badnets_dataset = create_backdoored_dataset(trainloader.dataset, target_label, trigger_ratio=0.3, dynamic=False)
+    badnets_dataset = create_backdoored_dataset(trainloader.dataset, target_label, trigger_ratio=0.5, dynamic=False)
     badnets_loader = torch.utils.data.DataLoader(badnets_dataset, batch_size=64, shuffle=True)
 
     badnets_model = resnet18(pretrained=False, num_classes=10)
@@ -179,7 +179,7 @@ if __name__ == "__main__":
     plot_confusion_matrix(badnets_model, testloader, classes, device, "BadNets")
 
     print("Creating TrojanNN dynamic backdoored dataset...")
-    trojannn_dataset = create_backdoored_dataset(trainloader.dataset, target_label, trigger_ratio=0.3, dynamic=True)
+    trojannn_dataset = create_backdoored_dataset(trainloader.dataset, target_label, trigger_ratio=0.5, dynamic=True)
     trojannn_loader = torch.utils.data.DataLoader(trojannn_dataset, batch_size=64, shuffle=True)
 
     trojannn_model = resnet18(pretrained=False, num_classes=10)
