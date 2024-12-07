@@ -108,7 +108,7 @@ if __name__ == "__main__":
 
         model = load_model(model_path, device=device)
 
-        cam_extractor = GradCAM(model, target_layer="layer1")
+        cam_extractor = GradCAM(model, target_layer="layer2")
 
         for i in range(3):  
             img, label = testset[i]
