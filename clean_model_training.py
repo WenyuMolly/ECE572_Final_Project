@@ -7,12 +7,10 @@ from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 import numpy as np
 from torchvision.models import resnet18
 
-# 定义模型
 def create_model(num_classes=10):
     model = resnet18(pretrained=False, num_classes=num_classes)
     return model
 
-# 数据加载
 def load_cifar10(batch_size=64):
     transform = transforms.Compose([
         transforms.ToTensor(),
@@ -24,7 +22,6 @@ def load_cifar10(batch_size=64):
     testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size, shuffle=False)
     return trainloader, testloader, trainset.classes
 
-# 训练模型
 def train_model(model, trainloader, testloader, criterion, optimizer, device, epochs=10):
     model.to(device)
     train_losses, test_accuracies = [], []
@@ -48,7 +45,6 @@ def train_model(model, trainloader, testloader, criterion, optimizer, device, ep
 
     return train_losses, test_accuracies
 
-# 模型评估
 def evaluate_model(model, dataloader, device):
     model.eval()
     correct, total = 0, 0
@@ -61,7 +57,6 @@ def evaluate_model(model, dataloader, device):
             total += labels.size(0)
     return 100 * correct / total
 
-# 可视化训练过程并保存图片
 def plot_results(train_losses, test_accuracies):
     plt.figure()
     plt.plot(train_losses, label="Train Loss")
@@ -83,7 +78,6 @@ def plot_results(train_losses, test_accuracies):
     print("Saved test accuracy curve to 'test_accuracy_curve.png'")
     plt.close()
 
-# 混淆矩阵可视化并保存图片
 def plot_confusion_matrix(model, dataloader, classes, device):
     model.eval()
     all_preds, all_labels = [], []
@@ -103,7 +97,6 @@ def plot_confusion_matrix(model, dataloader, classes, device):
     print("Saved confusion matrix to 'confusion_matrix.png'")
     plt.close()
 
-# 保存评估结果到文件
 def save_metrics_to_file(model_name, test_accuracies, filename="results_clean_model.txt"):
     with open(filename, "a") as file:
         file.write(f"{model_name}:\n")
@@ -112,29 +105,22 @@ def save_metrics_to_file(model_name, test_accuracies, filename="results_clean_mo
     print(f"Saved {model_name} metrics to {filename}")
 
 if __name__ == "__main__":
-    # 数据加载
     trainloader, testloader, classes = load_cifar10(batch_size=64)
 
-    # 创建模型
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model = create_model()
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.9)
 
-    # 训练模型
     print("Training clean model...")
     train_losses, test_accuracies = train_model(model, trainloader, testloader, criterion, optimizer, device, epochs=30)
 
-    # 保存训练过程可视化
     plot_results(train_losses, test_accuracies)
-
-    # 混淆矩阵可视化
+    
     print("Evaluating clean model on test set...")
     plot_confusion_matrix(model, testloader, classes, device)
 
-    # 保存评估结果到文件
     save_metrics_to_file("Clean Model", test_accuracies)
 
-    # 保存模型
     torch.save(model.state_dict(), "clean_model.pth")
     print("Saved clean model to 'clean_model.pth'")
