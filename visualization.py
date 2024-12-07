@@ -55,6 +55,10 @@ def compute_cam_with_torchcam(cam_extractor, model, img, label, device):
     cam = cam.detach().cpu().numpy()  # 转换为 NumPy 格式
     cam = (cam - cam.min()) / (cam.max() - cam.min() + 1e-8)  # 归一化
 
+    # 检查无效值
+    if torch.isnan(torch.tensor(cam)).any() or torch.isinf(torch.tensor(cam)).any():
+        raise ValueError("CAM contains NaN or Inf values. Please check the CAM computation.")
+
     # 打印上采样后 CAM 的形状
     print(f"Resized CAM shape: {cam.shape}")  # 调试信息
     return cam
@@ -66,6 +70,10 @@ def visualize_cam(img, cam, title="CAM Visualization", save_path=None):
     # 将张量格式转换为 NumPy 格式
     img_np = img.permute(1, 2, 0).cpu().numpy() * 0.5 + 0.5  # [H, W, C]
     cam_np = cam  # CAM 应为 [H, W] 格式
+
+    # 打印调试信息
+    print(f"Image min/max: {img_np.min()}, {img_np.max()}")
+    print(f"CAM min/max: {cam_np.min()}, {cam_np.max()}")
 
     # 确保形状匹配
     if cam_np.shape != img_np.shape[:2]:
