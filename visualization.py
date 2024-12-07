@@ -40,22 +40,31 @@ def compute_cam_with_torchcam(cam_extractor, model, img, label, device):
     elif not isinstance(cam, torch.Tensor) or cam.numel() == 0:
         raise ValueError(f"Generated CAM is empty or invalid. Label: {label}, Logits: {logits}")
 
+    # 打印原始 CAM 的形状
+    print(f"Original CAM shape: {cam.shape}")  # 调试信息
+
     # 上采样到输入图像大小
     cam = cam.unsqueeze(0).unsqueeze(0)  # 添加批次和通道维度 -> [N=1, C=1, H=4, W=4]
     cam = F.interpolate(cam, size=(img.shape[1], img.shape[2]), mode='bilinear', align_corners=False)
     cam = cam.squeeze(0).squeeze(0)  # 移除批次和通道维度 -> [H=32, W=32]
     cam = cam.detach().cpu().numpy()  # 转换为 NumPy 格式
     cam = (cam - cam.min()) / (cam.max() - cam.min() + 1e-8)  # 归一化
+
+    # 打印上采样后 CAM 的形状
+    print(f"Resized CAM shape: {cam.shape}")  # 调试信息
     return cam
 
 # 可视化函数
 def visualize_cam(img, cam, title="CAM Visualization", save_path=None):
     print(f"Image shape before visualization: {img.shape}")  # 调试信息
-    print(f"Resized CAM shape: {cam.shape}")  # 调试信息
 
     # 将张量格式转换为 NumPy 格式
     img_np = img.permute(1, 2, 0).cpu().numpy() * 0.5 + 0.5  # [H, W, C]
     cam_np = cam  # CAM 应为 [H, W] 格式
+
+    # 确保形状匹配
+    if cam_np.shape != img_np.shape[:2]:
+        raise ValueError(f"CAM shape {cam_np.shape} does not match image shape {img_np.shape[:2]}")
 
     # 可视化
     plt.imshow(img_np)  # 原始图像
